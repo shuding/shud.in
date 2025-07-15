@@ -34,5 +34,6 @@
     "postcss": "^8.4.47",
     "tailwindcss": "4.0.0-beta.8",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@8.4.0+sha512.a16e63a458029971c854e5391d92c158606d087ecae0949176993bfdff83b69f8a854b17e4d41a5b3cd8c94f535fb780b1f60c928d7bf75df781b512f894eb33"
 }
