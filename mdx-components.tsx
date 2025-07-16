@@ -1,5 +1,5 @@
 import type { MDXComponents } from 'mdx/types'
-import type { FC } from 'react'
+import type { FC, ReactNode } from 'react'
 import { codeToHtml, createCssVariablesTheme } from 'shiki'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -12,7 +12,10 @@ import { BlockSideTitle } from '@/components/block-sidetitle'
 
 const cssVariablesTheme = createCssVariablesTheme({})
 
-export const components: Record<string, FC<any>> = {
+export const components: Record<
+  string,
+  (props: any) => ReactNode | Promise<ReactNode>
+> = {
   h1: (props) => (
     <h1
       className='font-semibold mb-7 text-rurikon-600 text-balance'
@@ -153,6 +156,6 @@ export const components: Record<string, FC<any>> = {
 export function useMDXComponents(inherited: MDXComponents): MDXComponents {
   return {
     ...inherited,
-    ...components,
+    ...(components as any),
   }
 }
