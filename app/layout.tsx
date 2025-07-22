@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 
 // @ts-expect-error types are not available yet?
 import { unstable_ViewTransition as ViewTransition } from 'react'
@@ -71,6 +72,7 @@ export default function RootLayout({
             </ViewTransition>
           </main>
         </div>
+        <Analytics />
       </body>
     </html>
   )
