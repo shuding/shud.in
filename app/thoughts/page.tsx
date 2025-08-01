@@ -17,25 +17,25 @@ const articlesDirectory = path.join(
 export default async function Page() {
   const articles = await fs.readdir(articlesDirectory)
 
-  const items = []
-  for (const article of articles) {
-    if (!article.endsWith('.mdx')) continue
-    const module = await import('./_articles/' + article)
+  // const items = []
+  // for (const article of articles) {
+  //   if (!article.endsWith('.mdx')) continue
+  //   const module = await import('./_articles/' + article)
 
-    if (!module.metadata) throw new Error('Missing `metadata` in ' + article)
+  //   if (!module.metadata) throw new Error('Missing `metadata` in ' + article)
 
-    items.push({
-      slug: article.replace(/\.mdx$/, ''),
-      title: module.metadata.title,
-      date: module.metadata.date || '-',
-      sort: Number(module.metadata.date?.replaceAll('.', '') || 0),
-    })
-  }
-  items.sort((a, b) => b.sort - a.sort)
+  //   items.push({
+  //     slug: article.replace(/\.mdx$/, ''),
+  //     title: module.metadata.title,
+  //     date: module.metadata.date || '-',
+  //     sort: Number(module.metadata.date?.replaceAll('.', '') || 0),
+  //   })
+  // }
+  // items.sort((a, b) => b.sort - a.sort)
 
   return (
     <div>
-      <ul>
+      {/* <ul>
         {items.map((item) => (
           <li key={item.slug} className='font-medium'>
             <Link
@@ -53,7 +53,7 @@ export default async function Page() {
             </Link>
           </li>
         ))}
-      </ul>
+      </ul> */}
     </div>
   )
 }

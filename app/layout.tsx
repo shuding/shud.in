@@ -30,8 +30,8 @@ const mono = localFont({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s - Shu Ding',
-    default: 'Shu Ding',
+    template: '%s - Tim de Vries',
+    default: 'Tim de Vries',
   },
 }
 
