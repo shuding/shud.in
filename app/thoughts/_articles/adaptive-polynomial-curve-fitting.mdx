@@ -72,7 +72,7 @@ All the examples above shown a general idea. A “bad fit”, or an “overfit�
 
 That is, a very foundational concept in Machine Learning and Data Science, to split the data into a **training set** and a **test set**. The training set (the **current** data) is used to train the model and calculate the regression curve, and the test set (**newly** generated data) is used to evaluate how well the model works. A good fit for the training set should have a low error on the test set, too.
 
-In our real-world problem, we don’t actually have a training set and a test set (we can’t generate these random data) and all we have are the numbers collected from our production. But we can simply choose some data points as the training set, and the remaining ones become the test set. To make the algorithm determinisitic, I splitted our points by odd and even indexes.
+In our real-world problem, we don't actually have a training set and a test set (we can't generate these random data) and all we have are the numbers collected from our production. But we can simply choose some data points as the training set, and the remaining ones become the test set. To make the algorithm deterministic, I splitted our points by odd and even indexes.
 
 <figure>
   <iframe className="max-h-[608px] aspect-[2/3]" src="https://observablehq.com/embed/@shu/plot-regression?cells=Regression1%2Cviewof+orderT%2Cequation2"/>

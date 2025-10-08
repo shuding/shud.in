@@ -98,7 +98,7 @@ This 2-pass rendering strategy ensures that all the needed information inside th
 
 ## Streaming
 
-Unlike the final step above which sends everything to the browser all together, “streaming” means the HTML will be intentionally sent to the client piece by piece. The client can render the recieved parts while the server is still working on the remaining parts.
+Unlike the final step above which sends everything to the browser all together, "streaming" means the HTML will be intentionally sent to the client piece by piece. The client can render the received parts while the server is still working on the remaining parts.
 
 With the same example, if we use [Suspense](https://reactjs.org/docs/react-api.html#reactsuspense) to fetch `user` and enable streaming (`ReactDOMServer.renderToReadableStream`) in SSR:
 
