@@ -19,6 +19,7 @@
     "@vercel/analytics": "^1.5.0",
     "clsx": "^2.1.0",
     "katex": "^0.16.11",
+    "motion": "^12.23.22",
     "next": "15.4.2-canary.1",
     "next-mdx-remote": "^4.4.1",
     "react": "0.0.0-experimental-e1e74071-20250321",
