@@ -50,7 +50,10 @@ export const components: Record<
   a: ({ href, ...props }) => {
     return (
       <Link
-        className='break-words decoration-from-font underline underline-offset-2 decoration-rurikon-300 hover:decoration-rurikon-600 focus:outline-none focus-visible:rounded-xs focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-opacity-50 focus-visible:ring-offset-2'
+        className='break-words decoration-from-font underline underline-offset-2 decoration-rurikon-300 hover:decoration-rurikon-600 focus-visible:outline focus-visible:outline-rurikon-400
+        focus-visible:rounded-xs 
+        focus-visible:outline-offset-1
+        focus-visible:outline-dotted'
         href={href}
         draggable={false}
         {...(href?.startsWith('https://')

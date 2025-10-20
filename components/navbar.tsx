@@ -24,7 +24,14 @@ function Item(props: React.ComponentProps<typeof Link>) {
         '-mx-2'
       )}
     >
-      <Link {...props} className='inline-block w-full px-2' draggable={false} />
+      <Link
+        {...props}
+        className='inline-block w-full px-2 focus-visible:outline focus-visible:outline-rurikon-400
+        focus-visible:rounded-xs 
+        focus-visible:outline-dotted
+        focus-visible:text-rurikon-600'
+        draggable={false}
+      />
     </li>
   )
 }
