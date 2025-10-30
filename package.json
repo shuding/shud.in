@@ -19,7 +19,7 @@
     "@vercel/analytics": "^1.5.0",
     "clsx": "^2.1.0",
     "katex": "^0.16.11",
-    "next": "16.0.0",
+    "next": "16.0.2-canary.1",
     "react": "0.0.0-experimental-408b38ef-20251023",
     "react-dom": "0.0.0-experimental-408b38ef-20251023",
     "react-katex": "^3.0.1",
