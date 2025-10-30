@@ -6,17 +6,17 @@ export const metadata = {
 
 # COBE: WebGL Globe in 5kB
 
-_This blog post was originally published as a [Tweet thread](https://twitter.com/shuding_/status/1475916082875666441)._
+_This blog post was originally published as a [Tweet thread](https://twitter.com/shuding/status/1475916082875666441)._
 
 <Card title="COBE" desc="5kB WebGL globe lib." link="https://github.com/shuding/cobe" image="https://repository-images.githubusercontent.com/429536908/62a4e686-8613-4b45-b7bb-fa35b558ae8e" />
 
-I made [github.com/shuding/cobe](https://github.com/shuding/cobe) a while ago: a 5kB globe lib, and it improved our page performance by [almost 60%](https://twitter.com/shuding_/status/1467087244464959490). How was it created?
+I made [github.com/shuding/cobe](https://github.com/shuding/cobe) a while ago: a 5kB globe lib, and it improved our page performance by [almost 60%](https://twitter.com/shuding/status/1467087244464959490). How was it created?
 
 First of all, today's popular WebGL libs are usually sized at hundreds of kilobytes, but there are also lightweight choices such as [github.com/vaneenige/phenomenon](https://github.com/vaneenige/phenomenon) and [github.com/xem/W](https://github.com/xem/W). All of them are wrappers on top of the WebGL standard APIs, but with different feature sets.
 
 Earlier this year we were using a Three.js based solution. The globe is a SphereGeometry that loads the full world map JPEG as texture. Every visitor will spend ~40kB loading that image, and it still felt blurry so we couldn't optimize it further.
 
-<div className="framed" style={{ '--frame-padding': 0 }}>![](cobe-old.jpeg)</div>
+<div className="framed no-padding">![](cobe-old.jpeg)</div>
 
 We tried to set a higher texture anisotropy ([threejs.org/docs/#api/en/textures/Texture.anisotropy](https://threejs.org/docs/#api/en/textures/Texture.anisotropy)) which improved it a bit, but that's still a trade-off between performance and quality.
 
@@ -28,7 +28,7 @@ But one bottleneck in that GitHub approach is, they have to reduce the number of
 
 To start with that idea, let's create a shader to draw a sphere, and a 4096×2048 world map as the texture (80kB):
 
-<div className="framed" style={{ '--frame-padding': 0 }}>![](cobe-shader-1.png)</div>
+<div className="framed no-padding">![](cobe-shader-1.png)</div>
 
 ```js
 color = isOnLand(x, y) ? light : dark
@@ -36,7 +36,7 @@ color = isOnLand(x, y) ? light : dark
 
 Then we can render some kind of lattice on the globe, like this a basic one:
 
-<div className="framed" style={{ '--frame-padding': 0 }}>![](cobe-shader-2.png)</div>
+<div className="framed no-padding">![](cobe-shader-2.png)</div>
 
 ```js
 color = isOnDot(x, y) ? light : dark
@@ -44,7 +44,7 @@ color = isOnDot(x, y) ? light : dark
 
 By multiplying them, you get a dotted world map:
 
-<div className="framed" style={{ '--frame-padding': 0 }}>![](cobe-shader-3.png)</div>
+<div className="framed no-padding">![](cobe-shader-3.png)</div>
 
 ```js
 color = isOnLand(x, y) && isOnDot(x, y) ? light : dark
@@ -52,7 +52,7 @@ color = isOnLand(x, y) && isOnDot(x, y) ? light : dark
 
 It's interesting that, thanks to the sampling, if you downscale that texture from 4096×2048 (80kB) to 256×128 (1kB), the dotted world maps look almost the same! Since it's small enough, I just inlined it in the [lib](http://unpkg.com/cobe@0.4.1/dist/index.esm.js) as a base64 string:
 
-<div>
+<div className="break-all">
 ```
 data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAACAAQAAAADMzoqnAAAAAXNSR0IArs4c6QAABA5JREFUeNrV179uHEUAx/Hf3JpbF+E2VASBsmVKTBcpKJs3SMEDcDwBiVJAAewYEBUivIHT0uUBIt0YCovKD0CRjUC4QfHYh8hYXu+P25vZ2Zm9c66gMd/GJ/tz82d3bk8GN4SrByYF2366FNTACIAkivVAAazQdnf3MvAlbNUQfOPAdQDvSAimMWhwy4I2g4SU+Kp04ISLpPBAKLxPyic3O/CCi+Y7rUJbiodcpDOFY7CgxCEXmdYD2EYK2s5lApOx5pEDDYCUwM1XdJUwBV11QQMg59kePSCaPAASQMEL2hwo6TJFgxpg+TgC2ymXPbuvc40awr3D1QCFfbH9kcoqAOkZozpQo0aqAGQRKCog/+tjkgbNFEtg2FffBvBGlSxHoAaAa1u6X4PBAwDiR8FFsrQgeUhfJTSALaB9jy5NCybJPn1SVFiWk7ywN+KzhH1aKAuydhGkbEF4lWohLXDXavlyFgHY7LBnLRdlAP6BS5Cc8RfVDXbkwN/oIvmY+6obbNeBP0JwTuMGu9gTzy1Q4RS/cWpfzszeYwd+CAFrtBW/Hur0gLbJGlD+/OjVwe/drfBxkbbg63dndEDfiEBlAd7ac0BPe1D6Jd8dfbLH+RI0OzseFB5s01/M+gMdAeluLOCAuaUA9Lezo/vSgXoCX9rtEiXnp7Q1W/CNyWcd8DXoS6jH/YZ5vAJEWY2dXFQe2TUgaFaNejCzJ98g6HnlVrsE58sDcYqg+9XY75fPqdoh/kRQWiXKg8MWlJQxUFMPjqnyujhFBE7UxIMjyszk0QwQlFsezImsyvUYYYVED2pk6m0Tg8T04Fwjk2kdAwSACqlM6gRRt3vQYAFGX0Ah7Ebx1H+MDRI5ui0QldH4j7FGcm90XdxD2Jg1AOEAVAKhEFXSn4cKUELurIAKwJ3MArypPscQaLhJFICJ0ohjDySAdH8AhDtCiTuMycH8CXzhH9jUACAO5uMhoAwA5i+T6WAKmmAqnLy80wxHqIPFYpqCwxGaYLt4Dyievg5kEoVEUAhs6pqKgFtDQYOuaXypaWKQfIuwwoGSZgfLsu/XAtI8cGN+h7Cc1A5oLOMhwlIPXuhu48AIvsSBkvtV9wsJRKCyYLfq5lTrQMFd1a262oqBck9K1V0YjQg0iEYYgpS1A9GlXQV5cykwm4A7BzVsxQqo7E+zCegO7Ma7yKgsuOcfKbMBwLC8wvVNYDsANYalEpOAa6zpWjTeMKGwEwC1CiQewJc5EKfgy7GmRAZA4vUVGwE2dPM/g0xuAInE/yG5aZ8ISxWGfYigUVbdyBElTHh2uCwGdfCkOLGgQVBh3Ewp+/QK4CDlR5Ws/Zf7yhCf8pH7vinWAvoVCQ6zz0NX5V/6GkAVV+2/5qsJ/gU8bsxpM8IeAQAAAABJRU5ErkJggg==
 ```
@@ -80,13 +80,13 @@ So now we finally got everything ready. The sampling looks good with the new alg
 
 We also got rid of the precision error by rounding before sin/cos as well as [@farteryhr](https://twitter.com/farteryhr)’s amazing mantissa trick, if you want to know more about that part:
 
-- https://twitter.com/shuding_/status/1470068674560155650
+- https://twitter.com/shuding/status/1470068674560155650
 - https://github.com/shuding/cobe/pull/8
 - https://github.com/shuding/cobe/pull/9
 
 Finally, we can add some phong lighting and glow effect to make it look good. And the last step is to use [@evanwallace](https://twitter.com/evanwallace)’s [glslx](https://evanw.github.io/glslx) to compress the shader for distribution.
 
-<div className="framed" style={{ '--frame-padding': 0 }}>![](cobe-shader-6.jpeg)</div>
+<div className="framed no-padding">![](cobe-shader-6.jpeg)</div>
 
 This library now powers [vercel.com](https://vercel.com) and [vercel.com/edge](https://vercel.com/edge) :)
 

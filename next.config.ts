@@ -3,6 +3,7 @@ import { NextConfig } from 'next'
 
 export default withMDX()({
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
+  turbopack: {},
   redirects: async () => [
     {
       source: '/posts/:slug',
@@ -11,7 +12,6 @@ export default withMDX()({
     },
   ],
   experimental: {
-    viewTransition: true,
     mdxRs: {
       mdxType: 'gfm',
     },

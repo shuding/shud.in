@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
+    "dev": "next dev",
+    "build": "next build --turbo",
     "start": "next start",
     "lint": "next lint"
   },
@@ -12,17 +12,16 @@
     "@heroicons/react": "^2.1.5",
     "@mdx-js/loader": "^3.0.1",
     "@mdx-js/react": "^3.0.1",
-    "@next/mdx": "^14.1.4",
+    "@next/mdx": "^16.0.0",
     "@shikijs/rehype": "^3.2.1",
     "@tailwindcss/postcss": "4.0.15",
     "@types/mdx": "^2.0.12",
     "@vercel/analytics": "^1.5.0",
     "clsx": "^2.1.0",
     "katex": "^0.16.11",
-    "next": "15.4.2-canary.1",
-    "next-mdx-remote": "^4.4.1",
-    "react": "0.0.0-experimental-e1e74071-20250321",
-    "react-dom": "0.0.0-experimental-e1e74071-20250321",
+    "next": "16.0.0",
+    "react": "0.0.0-experimental-408b38ef-20251023",
+    "react-dom": "0.0.0-experimental-408b38ef-20251023",
     "react-katex": "^3.0.1",
     "remark-gfm": "^4.0.0",
     "sharp": "^0.33.4",
@@ -34,7 +33,7 @@
     "@types/react-dom": "^18",
     "postcss": "^8.4.47",
     "tailwindcss": "4.0.0-beta.8",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@8.4.0+sha512.a16e63a458029971c854e5391d92c158606d087ecae0949176993bfdff83b69f8a854b17e4d41a5b3cd8c94f535fb780b1f60c928d7bf75df781b512f894eb33"
+  "packageManager": "pnpm@8.7.0+sha512.1d61f8c10e8a5a5dbfbddea0f1f5efb7dbd5177223073aec953cf230aa46416884b9427a6421dba78f28ad0f93fbede38ba57083237b350243de6b1e3a8ce71d"
 }

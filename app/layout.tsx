@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 
 // @ts-expect-error types are not available yet?
-import { unstable_ViewTransition as ViewTransition } from 'react'
+import { ViewTransition } from 'react'
 
 import cn from 'clsx'
 import localFont from 'next/font/local'
