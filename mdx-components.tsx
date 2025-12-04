@@ -1,5 +1,5 @@
 import type { MDXComponents } from 'mdx/types'
-import type { FC, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { codeToHtml, createCssVariablesTheme } from 'shiki'
 import Link from 'next/link'
 import Image from 'next/image'

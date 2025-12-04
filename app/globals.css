@@ -46,14 +46,14 @@
 
   --color-rurikon-border: #d8dbdfb3;
 
-  --font-family-sans: var(--sans), -apple-system, ui-sans-serif, system-ui,
+  --font-sans: var(--sans), -apple-system, ui-sans-serif, system-ui,
     sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
-  --font-family-serif: var(--serif), ui-serif, Georgia, Cambria,
+  --font-serif: var(--serif), ui-serif, Georgia, Cambria,
     'Times New Roman', Times, serif;
-  --font-family-mono: var(--mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+  --font-mono: var(--mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --font-family-zh: var(--sans), -apple-system, ui-sans-serif, system-ui,
+  --font-zh: var(--zh), var(--sans), -apple-system, ui-sans-serif, system-ui,
     'PingFang SC', 'Hiragino Sans GB', 'Source Han Sans CN', sans-serif;
 
   --breakpoint-text: 1220px;

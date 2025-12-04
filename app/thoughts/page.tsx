@@ -23,6 +23,7 @@ export default async function Page() {
     const module = await import('./_articles/' + article)
 
     if (!module.metadata) throw new Error('Missing `metadata` in ' + article)
+    if (module.metadata.draft) continue
 
     items.push({
       slug: article.replace(/\.mdx$/, ''),
