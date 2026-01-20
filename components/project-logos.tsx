@@ -3,6 +3,7 @@ import {
   Bars3BottomLeftIcon,
   CodeBracketSquareIcon,
   GlobeAsiaAustraliaIcon,
+  QueueListIcon,
   SparklesIcon,
 } from '@heroicons/react/16/solid'
 
@@ -150,6 +151,15 @@ export function NextViewTransitions({ height = 24 }) {
     <LogoWithIcon
       icon={<ArrowsRightLeftIcon height={height} />}
       title='Next View Transitions'
+    />
+  )
+}
+
+export function ReactBestPractices({ height = 24 }) {
+  return (
+    <LogoWithIcon
+      icon={<QueueListIcon height={height} />}
+      title='React Best Practices'
     />
   )
 }
