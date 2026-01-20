@@ -1,0 +1,147 @@
+export const metadata = {
+  title: 'Performance Is Not a Technical Problem',
+  date: '2026.01.20',
+  description: 'After 400 performance PRs, I learned the problem isn\'t code or tools—it\'s entropy. And you can\'t fix entropy with a patch.',
+}
+
+# Performance Is Not a Technical Problem
+
+Over the past 7 years at Vercel, I have opened ~400 pull requests focused on performance. 1 in every 10. Waterfalls eliminated. Bundle sizes cut. Cache keys fixed. Re-renders removed.
+
+People ask me why. They think I am fixing broken code. I thought that too.
+
+But over time, I learned something: **these are not technical problems.** The same mistakes kept appearing. Different engineers. Different codebases. Different times.
+
+We have faster frameworks. Better compilers. Smarter linters. Performance still degrades.
+
+The problem is not the code. The problem is not the tools.
+
+The problem is **entropy**. And you cannot fix entropy with a patch.
+
+## I. The Constraint
+
+We tell ourselves a comforting lie: that if engineers "pay attention" and "write better code," the application will stay fast. **This does not work.**
+
+Every engineer—no matter how experienced—can only hold so much in their head. Modern codebases grow exponentially: dependencies, state machines, async flows, caching layers.
+
+The codebase grows faster than any individual can track. Engineers shift focus between features. Context fades. As the team scales, knowledge becomes distributed and diluted.
+
+You cannot hold the design of the cathedral in your head while laying a single brick.
+
+**Context does not scale.**
+
+## II. The Illusion
+
+If people cannot be the safeguard, we turn to tools. We convince ourselves that if the abstractions are smart enough, the product will be fast by default. **This is also wrong.**
+
+These are real patterns from production codebases, written by experienced engineers:
+
+**Example 1: Abstraction conceals cost**
+
+<BlockSideTitle title="A reusable popup hook that adds a global click listener">
+
+```tsx
+function Popup() {
+  useOnClickOutside(onClose)  // Adds a global event listener
+  // ...
+}
+```
+
+</BlockSideTitle>
+
+The abstraction looks clean. The cost is invisible. Each instance adds one global listener. 100 instances = 100 callbacks firing on every click. The technical fix is easy—deduplicate listeners. But the real problem is systemic: nothing prevents this pattern from spreading. The engineer reusing the hook has no way to know the cost until production.
+
+**Example 2: Fragile abstraction**
+
+<BlockSideTitle title="Cached function breaks when extended with object parameters">
+
+```typescript
+// Week 1: Engineer A adds caching
+export const getUser = React.cache(async (userId: string) => {
+  return await db.user.findUnique({ where: { id: userId } })
+})
+
+// Week 4: Engineer B extends it
+export const getUser = React.cache(async ({ userId, includeRole }: { userId: string; includeRole: boolean }) => {
+  return await db.user.findUnique({ 
+    where: { id: userId },
+    include: { role: includeRole }
+  })
+})
+```
+
+</BlockSideTitle>
+
+Engineer B made a reasonable change—add a parameter, extend functionality. The code compiles. Tests pass. But `React.cache()` uses referential equality. Every call with `{ userId, includeRole }` creates a new object reference, breaking the cache completely. The technical knowledge exists in the docs. The systemic problem is that nothing enforces this contract. Type safety doesn't help. The cache silently stops working.
+
+**Example 3: Abstraction grows opaque**
+
+<BlockSideTitle title="Adding a feature creates an unintended waterfall in a long function">
+
+```typescript
+async function processCheckout() {
+  // ... 500 lines of complex business logic ...
+  
+  // Someone adds a feature: apply coupon for new users
+  const hasCoupon = await getCouponStatus(user.id)
+  if (hasCoupon) {
+    cart.discount = await applyCoupon(cart.id)
+  }
+  
+  // ... 500 more lines of other features...
+}
+```
+
+</BlockSideTitle>
+
+The coupon check blocks everything below it. Technically, it could run in parallel or be hoisted. But the engineer is solving a local problem: "add coupon support." They're not thinking about global async flow. In a 1000-line function built over months by multiple people, the waterfall is invisible. This isn't a knowledge gap—it's a context gap. The information needed to optimize exists, but spread across the entire function.
+
+**Example 4: Abstraction overhead**
+
+<BlockSideTitle title="Memoizing a property access that's faster without memoization">
+
+```tsx
+const historySize = useMemo(() => history.length, [history])
+```
+
+</BlockSideTitle>
+
+Reading `.length` is instant—a property access. Creating a memoization closure, tracking dependencies, and comparing on every render is not. The technical cost is measurable. But the systemic problem is that nothing requires measurement. The abstraction exists to optimize expensive work. Nobody verified the work was expensive. The system allows optimization without proof of need.
+
+**Abstractions fail not because they are poorly designed, but because they require global context that engineers do not have when making local changes.**
+
+You cannot code your way out of a systems problem.
+
+## III. The Reality
+
+Performance is like a garden. Without constant weeding, it degrades.
+
+You can profile. You can optimize. You can write the perfect abstraction. But the next engineer won't see it. The next deadline will cut corners. The next feature will add the waterfall.
+
+We wait for the application to "feel" slow, then we fix it. **This is reactive. Great products are built proactively.**
+
+Entropy wins. Not because engineers are careless. Because the system allows it.
+
+The solution is systems that enforce what discipline cannot.
+
+## IV. The Shift
+
+We finally have systems that can reference the entire design of the cathedral while examining every brick. They do not get tired. They apply the same standards every time. They do not skip the check because of a deadline.
+
+**This is not about AI writing code for you. It is about teaching at the exact moment you need to learn.**
+
+When someone writes a waterfall, the system does not just flag it—it teaches them. "This blocks the request. Here's how to parallelize it." When they break a cache, it explains why.
+
+How do you build this? You distill the patterns. Each mistake becomes a rule. Each rule captures not just what broke, but why, and how to fix it. Then you make it queryable, maintainable, and enforceable.
+
+This is not theoretical. The patterns we have seen—cache breaks, waterfalls, unnecessary re-renders—can be [distilled into structured knowledge](https://vercel.com/blog/introducing-react-best-practices) that agents reference in real-time. When they review code, they apply the patterns. When they find a violation, they explain it.
+
+Early results prove this works. Teams are finding critical issues they missed in manual review.
+
+You cannot code your way out of complexity. But you can build systems that remember what humans forget.
+
+That is how you stop entropy.
+
+> *Software tends toward chaos. That is entropy.  
+You cannot fight it with willpower.  
+You fight it with systems.*
