@@ -136,8 +136,7 @@ pre {
   background-color: #f7f7f7;
   /* contain: paint; */
   /* margin: 1.75rem 0; */
-  /* overflow-x: auto; */
-  overflow-y: visible;
+  overflow-x: auto;
   /* border-radius: 0.75rem; */
   /* background-color: var(--color-rurikon-50); */
   padding: 0.875rem 1.25rem;
@@ -148,9 +147,10 @@ pre code {
   display: inline-block;
   padding: 0;
   line-height: 1.45rem;
-  width: 100%;
-  white-space: pre-wrap;
-  word-break: break-all;
+  min-width: 100%;
+  width: max-content;
+  white-space: pre;
+  word-break: normal;
 }
 
 code {
