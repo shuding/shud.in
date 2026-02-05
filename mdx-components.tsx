@@ -1,6 +1,12 @@
 import type { MDXComponents } from 'mdx/types'
 import type { ReactNode } from 'react'
 import { codeToHtml, createCssVariablesTheme } from 'shiki'
+import { rendererRich, transformerTwoslash } from '@shikijs/twoslash'
+import {
+  transformerNotationHighlight,
+  transformerNotationWordHighlight,
+} from '@shikijs/transformers'
+
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -22,12 +28,35 @@ export const components: Record<
       {...props}
     />
   ),
-  h2: (props) => (
-    <h2
-      className='font-semibold mt-14 mb-7 text-rurikon-600 text-balance'
-      {...props}
-    />
-  ),
+  h2: ({ children, ...props }) => {
+    const getText = (node: any): string => {
+      if (typeof node === 'string') return node
+      if (Array.isArray(node)) return node.map(getText).join('')
+      if (node?.props?.children) return getText(node.props.children)
+      return ''
+    }
+    const id = getText(children)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
+    return (
+      <h2
+        id={id}
+        className='group relative font-semibold mt-14 mb-7 text-rurikon-600 text-balance scroll-mt-14'
+        {...props}
+      >
+        <a
+          href={`#${id}`}
+          className='absolute pr-7 py-3.5 -left-7 -top-3.5 opacity-0 blur-xs group-hover:opacity-100 group-hover:blur-none text-rurikon-200 hover:text-rurikon-500 transition-all delay-0 duration-500 group-target:blur-none group-target:opacity-100 group-hover:delay-300 select-none'
+          aria-label='Link to this section'
+        >
+          #
+        </a>
+        {children}
+      </h2>
+    )
+  },
   h3: (props) => (
     <h3
       className='font-semibold mt-14 mb-7 text-rurikon-600 text-balance'
@@ -48,12 +77,18 @@ export const components: Record<
   ),
   li: (props) => <li className='pl-1.5' {...props} />,
   a: ({ href, ...props }) => {
+    const className =
+      'break-words decoration-from-font underline underline-offset-2 decoration-rurikon-300 hover:decoration-rurikon-600 focus-visible:outline focus-visible:outline-rurikon-400 focus-visible:rounded-xs focus-visible:outline-offset-1 focus-visible:outline-dotted'
+
+    if (href?.startsWith('#')) {
+      return (
+        <a className={className} href={href} draggable={false} {...props} />
+      )
+    }
+
     return (
       <Link
-        className='break-words decoration-from-font underline underline-offset-2 decoration-rurikon-300 hover:decoration-rurikon-600 focus-visible:outline focus-visible:outline-rurikon-400
-        focus-visible:rounded-xs 
-        focus-visible:outline-offset-1
-        focus-visible:outline-dotted'
+        className={className}
         href={href}
         draggable={false}
         {...(href?.startsWith('https://')
@@ -79,8 +114,20 @@ export const components: Record<
   ),
   code: async (props) => {
     if (typeof props.children === 'string') {
+      const classNames = props.className || ''
+      let twoSlash = false
+      let lang = 'language-jsx'
+
+      for (const className of classNames.split(',')) {
+        if (className.startsWith('language-')) {
+          lang = className
+        } else if (className === 'twoslash') {
+          twoSlash = true
+        }
+      }
+
       const code = await codeToHtml(props.children, {
-        lang: 'jsx',
+        lang: lang.replace('language-', ''),
         theme: cssVariablesTheme,
         // theme: 'min-light',
         // theme: 'snazzy-light',
@@ -88,7 +135,7 @@ export const components: Record<
           {
             // Since we're using dangerouslySetInnerHTML, the code and pre
             // tags should be removed.
-            pre: (hast) => {
+            pre: (hast: any) => {
               if (hast.children.length !== 1) {
                 throw new Error('<pre>: Expected a single <code> child')
               }
@@ -97,11 +144,20 @@ export const components: Record<
               }
               return hast.children[0]
             },
-            postprocess(html) {
+            postprocess(html: string) {
               return html.replace(/^<code>|<\/code>$/g, '')
             },
           },
-        ],
+          twoSlash
+            ? (transformerTwoslash({
+                renderer: rendererRich({
+                  errorRendering: 'hover',
+                }),
+              }) as any)
+            : undefined,
+          transformerNotationHighlight(),
+          transformerNotationWordHighlight(),
+        ].filter(Boolean),
       })
 
       return (

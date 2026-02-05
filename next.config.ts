@@ -19,6 +19,7 @@ export default withMDX()({
     turbopackFileSystemCacheForBuild: true,
   },
   transpilePackages: ['shiki'],
+  serverExternalPackages: ['@shikijs/twoslash'],
   images: {
     contentDispositionType: 'inline',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

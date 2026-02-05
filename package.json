@@ -14,6 +14,8 @@
     "@mdx-js/react": "^3.0.1",
     "@next/mdx": "^16.0.0",
     "@shikijs/rehype": "^3.2.1",
+    "@shikijs/transformers": "^3.22.0",
+    "@shikijs/twoslash": "^3.22.0",
     "@tailwindcss/postcss": "4.0.15",
     "@types/mdx": "^2.0.12",
     "@vercel/analytics": "^1.5.0",

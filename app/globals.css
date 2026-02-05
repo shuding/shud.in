@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @source "../mdx-components.tsx";
+/* @import "./twoslash.css"; */
 
 @layer utilities {
   .font-thin {
@@ -133,7 +134,7 @@ main {
 
 pre {
   background-color: #f7f7f7;
-  contain: paint;
+  /* contain: paint; */
   /* margin: 1.75rem 0; */
   overflow-x: auto;
   /* border-radius: 0.75rem; */
@@ -146,6 +147,10 @@ pre code {
   display: inline-block;
   padding: 0;
   line-height: 1.45rem;
+  min-width: 100%;
+  width: max-content;
+  white-space: pre;
+  word-break: normal;
 }
 
 code {
@@ -163,18 +168,38 @@ code {
   /* color: hsl(215deg 32% 37%); */
   --shiki-token-comment: hsl(215deg 32% 37% / 45%);
   --shiki-token-punctuation: hsl(215deg 32% 37% / 65%);
-  --shiki-token-keyword: hsl(215deg 32% 37% / 85%);
-  --shiki-token-function: hsl(223deg 85% 46%);
-  --shiki-token-string: #0fb359;
-  --shiki-token-string-expression: #0fb359;
+  --shiki-token-keyword: oklch(0.25 0.09 256.57 / 0.65);
+  --shiki-token-function: oklch(0.46 0.22 259.43);
+  --shiki-token-string: oklch(0.46 0.19 147.42);
+  --shiki-token-string-expression: oklch(0.46 0.19 147.42);
   --shiki-token-constant: hsl(215deg 32% 26%);
-  --shiki-token-link: #0fb359;
+  --shiki-token-link: oklch(0.46 0.19 147.42);
   --shiki-token-parameter: #ff9800;
+  --shiki-foreground: lab(21 17.74 -56.63);
 }
 
 pre {
   --shiki-foreground: #414141;
   --shiki-background: transparent;
+}
+pre code {
+  --shiki-foreground: #414141;
+}
+
+code {
+  /* Shiki transformers */
+  .line.highlighted {
+    background-color: oklch(0.69 0.17 251.54 / 0.09);
+    margin: 0 -1.25rem;
+    padding: 0 1.25rem;
+    width: calc(100% + 2.5rem);
+    display: inline-block;
+  }
+  .highlighted-word {
+    background-color: lab(97 -16.78 110.24 / 0.23);
+    padding: 2px;
+    margin: -2px;
+  }
 }
 
 code span {
