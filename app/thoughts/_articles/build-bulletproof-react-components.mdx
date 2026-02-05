@@ -23,7 +23,7 @@ Here’s how to make it _survive_.
 6. [Make It __Portal__-Proof](#make-it-portal-proof)
 7. [Make It __Transition__-Proof](#make-it-transition-proof)
 8. [Make It __Activity__-Proof](#make-it-activity-proof)
-9. [Make It __Future__-Proof](#make-it-future-proof)
+9. [Make It __Future__-Proof<sup>*</sup>](#make-it-future-proof)
 
 ## Make It Server-Proof
 
@@ -221,7 +221,7 @@ function ThemeProvider({ children }) {
 
 </BlockSideTitle>
 
-But with [React Server Components](https://react.dev/reference/rsc/server-components), [`React.lazy`](https://react.dev/reference/react/lazy), or [`"use cache"`](https://nextjs.org/docs/app/api-reference/directives/use-cache), `children` might be a Promise or an [opaque reference](https://react.dev/reference/react/Children#why-is-the-children-prop-not-always-an-array)—`cloneElement` breaks. Use context instead:
+But with [React Server Components](https://react.dev/reference/rsc/server-components), [`React.lazy`](https://react.dev/reference/react/lazy), or [`"use cache"`](https://nextjs.org/docs/app/api-reference/directives/use-cache), `children` might be a Promise or an [opaque reference](https://react.dev/reference/react/Children#why-is-the-children-prop-not-always-an-array)—`cloneElement` won't work. Use context instead:
 
 <BlockSideTitle title="Context works everywhere—server, client, async">
 
@@ -354,25 +354,23 @@ Now the transition animates smoothly.
 
 ## Make It Activity-Proof
 
-A simple music player:
+A theme component that injects CSS variables via a `<style>` tag:
 
-<BlockSideTitle title="Simple play/pause button">
+<BlockSideTitle title="Injects global CSS variables via style tag">
 
 ```jsx
-function MusicPlayer() {
-  const [playing, setPlaying] = useState(false)
-  const ref = useRef(null)
-
+// [!code word:<style>]
+// [!code word:</style>]
+function DarkTheme({ children }) {
   return (
     <>
-      <audio ref={ref} src="song.mp3" />
-      <button onClick={() => {
-        // [!code word:.play()]
-        playing ? ref.current.pause() : ref.current.play()
-        setPlaying(!playing)
-      }}>
-        {playing ? 'Pause' : 'Play'}
-      </button>
+      <style>{`
+        :root {
+          --bg: #000;
+          --fg: #fff;
+        }
+      `}</style>
+      {children}
     </>
   )
 }
@@ -380,29 +378,30 @@ function MusicPlayer() {
 
 </BlockSideTitle>
 
-But wrap it in [`<Activity>`](https://react.dev/reference/react/Activity), and the music keeps playing when hidden. `<Activity>` preserves DOM, and `<audio>` has DOM-level side effects React can’t automatically stop. Add cleanup with `useLayoutEffect`:
+But if you wrap it in [`<Activity>`](https://react.dev/reference/react/Activity), the dark theme persists even when hidden. `<Activity>` preserves DOM, and `<style>` has DOM-level side effects—it modifies `:root` variables globally. React can't automatically clean up these side effects. Set `media="not all"` to disable the styles when hidden:
 
-<BlockSideTitle title="useLayoutEffect cleanup pauses when hidden">
+<BlockSideTitle title="useLayoutEffect sets media='not all' when hidden and restores it when unhidden">
 
 ```jsx
-function MusicPlayer() {
-  const [playing, setPlaying] = useState(false)
+function DarkTheme({ children }) {
   const ref = useRef(null)
 
-  // [!code highlight:3]
+  // [!code highlight:5]
   useLayoutEffect(() => {
-    return () => ref.current?.pause()
+    if (!ref.current) return
+    ref.current.media = 'all'
+    return () => ref.current.media = 'not all'
   }, [])
 
   return (
     <>
-      <audio ref={ref} src="song.mp3" />
-      <button onClick={() => {
-        playing ? ref.current.pause() : ref.current.play()
-        setPlaying(!playing)
-      }}>
-        {playing ? 'Pause' : 'Play'}
-      </button>
+      <style ref={ref}>{`
+        :root {
+          --bg: #000;
+          --fg: #fff;
+        }
+      `}</style>
+      {children}
     </>
   )
 }
@@ -410,45 +409,47 @@ function MusicPlayer() {
 
 </BlockSideTitle>
 
-Now hidden components pause their media.
+Now hidden components won't have the dark theme applied.
 
-## Make It Future-Proof
+## Make It Future-Proof<sup>*</sup>
 
-A scatter plot that assigns random colors to points:
+_This is a concept to understand: be defensive. It is not a pattern to apply everywhere._
 
-<BlockSideTitle title="useMemo caches the computed colors">
+A theme that generates random accent colors on mount:
+
+<BlockSideTitle title="useMemo caches the generated colors">
 
 ```jsx
-function Scatter({ points }) {
+function ThemeProvider({ baseTheme, children }) {
   // [!code word:useMemo]
-  const colored = useMemo(
-    () => assignRandomColors(points),
-    [points]
+  const colors = useMemo(
+    () => getRandomColors(baseTheme),
+    [baseTheme]
   )
 
-  return <Canvas data={colored} />
+  return <div style={colors}>{children}</div>
 }
 ```
 
 </BlockSideTitle>
 
-But `useMemo` is a performance hint, not a semantic guarantee. React discards cached values during HMR, and reserves the right to do so for offscreen components or features that don’t exist yet. If React discards the cache, colors change unexpectedly. Use state when correctness depends on persistence:
+But `useMemo` is a [performance hint, not a semantic guarantee](https://react.dev/reference/react/useMemo#caveats). React discards cached values during HMR, and reserves the right to do so for offscreen components or features that don’t exist yet. If React discards the cache, your theme flickers to different colors. Use state when correctness depends on persistence:
 
 <BlockSideTitle title="useState provides semantic persistence guarantee">
 
 ```jsx
-function Scatter({ points }) {
-  // [!code highlight:3]
-  const [colored, setColored] = useState(
-    () => assignRandomColors(points)
-  )
+function ThemeProvider({ baseTheme, children }) {
+  // [!code highlight:2]
+  const [colors, setColors] = useState(() => generateAccentColors(baseTheme))
+  const [prevTheme, setPrevTheme] = useState(baseTheme)
 
-  // [!code highlight:3]
-  useEffect(() => {
-    setColored(assignRandomColors(points))
-  }, [points])
+  // [!code highlight:4]
+  if (baseTheme !== prevTheme) {
+    setPrevTheme(baseTheme)
+    setColors(generateAccentColors(baseTheme))
+  }
 
-  return <Canvas data={colored} />
+  return <div style={colors}>{children}</div>
 }
 ```
 
