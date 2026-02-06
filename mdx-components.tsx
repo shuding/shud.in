@@ -43,12 +43,12 @@ export const components: Record<
     return (
       <h2
         id={id}
-        className='group relative font-semibold mt-14 mb-7 text-rurikon-600 text-balance scroll-mt-14'
+        className='group relative font-semibold mt-14 mb-7 text-rurikon-600 text-balance scroll-mt-6 sm:scroll-mt-14'
         {...props}
       >
         <a
           href={`#${id}`}
-          className='absolute pr-3.5 sm:pr-7 py-3.5 -left-3.5 sm:-left-7 -top-3.5 opacity-0 blur-xs group-hover:opacity-100 group-hover:blur-none text-rurikon-200 hover:text-rurikon-500 transition-all delay-0 duration-500 group-target:blur-none group-target:opacity-100 group-hover:delay-300 select-none'
+          className='absolute md:w-14 sm:w-10 mobile:w-6 w-6 -translate-x-[calc(100%-2px)] text-center opacity-0 blur-xs group-hover:opacity-100 group-hover:blur-none text-rurikon-200 hover:text-rurikon-500 transition-all delay-0 duration-500 group-target:blur-none group-target:opacity-100 group-hover:delay-300 select-none'
           aria-label='Link to this section'
         >
           #

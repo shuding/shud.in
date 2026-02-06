@@ -178,7 +178,7 @@ async function ThemeProvider({ children }) {
 
 </BlockSideTitle>
 
-Similar to before, render it in two places and you might get two identical database queries. Wrap the query in [`cache()`](https://react.dev/reference/react/cache) to deduplicate within a single request:
+Similar to before, render it in two places and you might get two identical database queries. Wrap the query in [`React.cache`](https://react.dev/reference/react/cache) to deduplicate within a single request:
 
 <BlockSideTitle title="React cache() deduplicates concurrent calls">
 
