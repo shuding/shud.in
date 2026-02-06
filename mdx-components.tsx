@@ -48,7 +48,7 @@ export const components: Record<
       >
         <a
           href={`#${id}`}
-          className='absolute pr-7 py-3.5 -left-7 -top-3.5 opacity-0 blur-xs group-hover:opacity-100 group-hover:blur-none text-rurikon-200 hover:text-rurikon-500 transition-all delay-0 duration-500 group-target:blur-none group-target:opacity-100 group-hover:delay-300 select-none'
+          className='absolute pr-3.5 sm:pr-7 py-3.5 -left-3.5 sm:-left-7 -top-3.5 opacity-0 blur-xs group-hover:opacity-100 group-hover:blur-none text-rurikon-200 hover:text-rurikon-500 transition-all delay-0 duration-500 group-target:blur-none group-target:opacity-100 group-hover:delay-300 select-none'
           aria-label='Link to this section'
         >
           #
