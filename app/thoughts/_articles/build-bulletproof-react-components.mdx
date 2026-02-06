@@ -23,7 +23,8 @@ Here’s how to make it _survive_.
 6. [Make It __Portal__-Proof](#make-it-portal-proof)
 7. [Make It __Transition__-Proof](#make-it-transition-proof)
 8. [Make It __Activity__-Proof](#make-it-activity-proof)
-9. [Make It __Future__-Proof](#make-it-future-proof)<sup>*</sup>
+9. [Make It __Leak__-Proof](#make-it-leak-proof)
+10. [Make It __Future__-Proof](#make-it-future-proof)<sup>*</sup>
 
 ## Make It Server-Proof
 
@@ -410,6 +411,50 @@ function DarkTheme({ children }) {
 </BlockSideTitle>
 
 Now hidden components won't have the dark theme applied.
+
+## Make It Leak-Proof
+
+A Server Component that passes a `user` object (including a session token) to another theming component. Valid use case—you need the data on the server. You might know `UserThemeConfig` is a Server Component and it’s _safe_ to pass the data to it.
+
+<BlockSideTitle title="Dashboard passes user (with token) to another component">
+
+```jsx
+async function Dashboard() {
+  const user = await getUser()
+
+  // [!code word:user={user}]
+  return <UserThemeConfig user={user} />
+}
+```
+
+</BlockSideTitle>
+
+However, you don’t know `UserThemeConfig`’s exact behavior, what it renders, or what a future version might do. You don’t maintain it.
+
+Also because `UserThemeConfig` does not create `user`, it might not know that `user` has a sensitive `token` property. You do not control that component, so you cannot assume it will not pass that to a Client Component somewhere in its tree. The token gets serialized and sent to the client. Use React’s experimental **[`taintUniqueValue`](https://react.dev/reference/react/experimental_taintUniqueValue)** to mark the token as server-only. If that value is ever passed to a Client Component, React throws. To block an entire object instead of a single value, use **[`taintObjectReference`](https://react.dev/reference/react/experimental_taintObjectReference)**.
+
+<BlockSideTitle title="taintUniqueValue blocks user.token from being sent to the client">
+
+```jsx
+import { experimental_taintUniqueValue } from 'react'
+
+async function Dashboard() {
+  const user = await getUser()
+
+  // [!code highlight:5]
+  experimental_taintUniqueValue(
+    'Do not pass the user token to the client.',
+    user,
+    user.token
+  )
+
+  return <UserThemeConfig user={user} />
+}
+```
+
+</BlockSideTitle>
+
+If that component’s code (or a future refactor by someone else on the team) tries to pass `user.token` to a Client Component, React throws with your message. Valid use case stays; the token never leaks.
 
 ## Make It Future-Proof<sup>*</sup>
 
