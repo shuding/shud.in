@@ -304,3 +304,7 @@ article {
     filter: blur(0);
   }
 }
+
+[data-codice-editor] code {
+  white-space: pre-wrap;
+}

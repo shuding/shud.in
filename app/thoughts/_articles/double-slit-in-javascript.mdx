@@ -1,0 +1,574 @@
+export const metadata = {
+  title: "Double Slit in JavaScript",
+  date: "2026.02.14",
+  description: "TODO",
+}
+
+# Double-Slit `exec()` Runtime — Interactive Playground
+
+## Overview
+
+Build a browser-based interactive playground that simulates the **double-slit experiment** using JavaScript as the medium. Users write JS code containing an `exec(...fns)` call; the runtime determines whether the result exhibits **quantum interference** or **wavefunction collapse** based on whether the functions' side effects (IO) leak "which-path information."
+
+This is an educational tool for programmers to build intuition about quantum mechanics through code.
+
+<DoubleSlitPlayground />
+
+## Core Concept
+
+The central insight: **"observation" is not "having side effects" — it's "side effects that leak which-path information."**
+
+- `exec` accepts N closures (representing N slits)
+- Each closure returns a number (the slit's y-position on the screen)
+- The runtime **pre-executes** all paths in isolated sandboxes, collecting their IO (console.log output)
+- If all paths produce **identical IO sequences** → **superposition** (multi-slit interference pattern)
+- If any path's IO differs → **collapse** (randomly pick one path, single-slit diffraction pattern)
+- `exec` does not return a value. Instead it draws a dot on a virtual "screen" (canvas), sampled from the appropriate probability distribution
+- Running the program many times accumulates dots into a visible pattern (interference fringes or diffraction blobs)
+
+## Architecture
+
+### Sandbox: QuickJS compiled to WASM
+
+User code must **never** execute in the real JS engine. Use `quickjs-emscripten` to run user code in a fully isolated QuickJS VM.
+
+**Why:** `new Function` / `eval` are not safe — users can escape via prototype chains, `constructor`, etc. QuickJS provides total isolation: only explicitly injected APIs exist. `window`, `globalThis`, `document`, `fetch` — all undefined. This also gives us determinism for free.
+
+**Injected APIs (nothing else exists):**
+
+| API | Behavior |
+|---|---|
+| `console.log(...)` | Records args + timestamp into IO trace. The **only** IO channel. |
+| `Math.random()` | Deterministic PRNG (mulberry32), seeded per-run. |
+| `Math.*` | Forward standard math functions (`floor`, `ceil`, `sqrt`, `sin`, `cos`, `abs`, `PI`, `E`, etc.) |
+| `setTimeout(cb, ms)` | Pushes callback onto a pending queue with virtual timestamp. |
+| `Date.now()` | Returns virtual clock value. |
+| `exec(...fns)` | The core primitive (see below). |
+
+**Important: `Math.random` seeds must be independent per path.** Two paths calling `Math.random()` should get different sequences. Shared seeds create false correlations (a hidden variable model). Each path gets its own seed derived from the run seed + path index.
+
+**setTimeout implementation:** Implemented inside the VM. After the main code executes, a `__flush()` function drains the pending queue synchronously, sorted by virtual time. Callbacks may enqueue more callbacks (loop until empty, with a guard limit).
+
+### Pre-execution Flow
+
+For a single run:
+
+```
+1. Parse user code, identify the exec() call and its N closures
+2. For each path i (0..N-1):
+   a. Create a fresh QuickJS VM
+   b. Inject controlled APIs (console, Math, setTimeout, Date)
+   c. Inject exec() that only calls the i-th closure
+   d. Execute the ENTIRE user program (not just the closure — 
+      this includes code before and after exec())
+   e. Flush async queue
+   f. Collect: return value of the i-th closure, full IO trace
+   g. Dispose VM
+3. Compare all IO traces pairwise
+4. If all identical → interference mode
+   If any differ → collapse mode
+5. Sample a screen position from the appropriate distribution
+6. Draw a dot on the canvas
+```
+
+**Critical: pre-execution covers the entire program, not just the closure body.** Code after `exec()` that reads global variables modified by closures and calls `console.log` will produce different IO across paths — causing collapse. This correctly implements delayed-choice semantics.
+
+### exec() Injection
+
+Inside path i's VM, `exec` is defined as:
+
+```javascript
+function exec() {
+  var fns = Array.prototype.slice.call(arguments);
+  return fns[PATH_INDEX]();
+}
+```
+
+Where `PATH_INDEX` is baked in at VM creation time. The return value is captured by the host as the slit position. For N-slit experiments, `exec` accepts N closures.
+
+### Physics: Probability Distributions
+
+**Multi-slit interference (superposition):**
+Given N slit positions y₁..yₙ, compute the interference pattern on a screen at distance D:
+
+```
+For each screen position y:
+  amplitude = Σᵢ exp(i·k·rᵢ)    where rᵢ = sqrt(D² + (y - yᵢ)²)
+  intensity = |amplitude|²
+```
+
+Normalize to get PDF, sample via inverse CDF.
+
+Parameters: wavelength=0.5, screen distance D=10, screen range [-5, 5], 1000 sample points.
+
+**Single-slit diffraction (collapse):**
+Randomly choose one path. Compute sinc² diffraction envelope centered on that slit's position.
+
+```
+For each screen position y:
+  θ = atan2(y - y₀, D)
+  β = (k · w · sin(θ)) / 2     where w = slit width (0.3)
+  intensity = sinc²(β)
+```
+
+### Display Modes
+
+The playground shows **two simultaneous views:**
+
+1. **Discrete result** (top): Shows the symbolic result of the current run
+   - Superposition: `"1 + 2 = 3 (superposition)"`
+   - Collapse: `"1 (collapse — slit1 chosen)"`
+   
+2. **Screen canvas** (main): Accumulates dots over many runs, forming visible patterns
+   - Each dot is a small bright point at the sampled y-position
+   - Over thousands of runs, interference fringes or diffraction blobs emerge
+   - Include a "Run N times" button (default N=5000)
+   - Clear screen button
+
+3. **IO panel** (side/bottom): Shows the IO traces from the most recent run
+   - Display each path's IO side by side
+   - Highlight differences in red
+
+### UI Layout
+
+- **Left panel**: Code editor (CodeMirror or Monaco) with the user's JS code
+- **Right panel top**: Canvas "screen" where dots accumulate
+- **Right panel bottom**: Discrete result display + IO trace comparison
+- **Controls**: Run once, Run 5000x, Clear screen, speed slider
+- Ship with a dropdown of all example experiments (see below)
+- Modern, dark theme. Clean typography.
+
+## Example Experiments
+
+Ship these as selectable presets in the playground. Each should have a title, description, and code.
+
+### Experiment 1: Classic Double Slit — No Observation
+
+```javascript
+exec(function() { return 1 }, function() { return -1 })
+```
+
+Description: Both slits are pure functions with no IO. The runtime cannot distinguish which path was taken. Result: interference fringes.
+
+### Experiment 2: Path Observation → Collapse
+
+```javascript
+exec(
+  function() { console.log('slit1'); return 1 },
+  function() { console.log('slit2'); return -1 }
+)
+```
+
+Description: Each slit logs different content — which-path information leaks. Result: two diffraction blobs, no fringes.
+
+### Experiment 3: One-Sided Observation
+
+```javascript
+exec(
+  function() { console.log('detected'); return 1 },
+  function() { return -1 }
+)
+```
+
+Description: Only slit1 has a detector. One path has IO, the other doesn't — always distinguishable. Result: collapse, even though slit2 has no detector.
+
+### Experiment 4: Quantum Erasure
+
+```javascript
+exec(
+  function() { console.log('photon detected'); return 1 },
+  function() { console.log('photon detected'); return -1 }
+)
+```
+
+Description: Both slits have detectors, but they output identical strings. The observer cannot determine which path — information is "erased." Result: interference restored.
+
+### Experiment 5: Imperfect Detector (50% efficiency)
+
+```javascript
+exec(
+  function() {
+    if (Math.random() > 0.5) console.log('click');
+    return 1;
+  },
+  function() { return -1 }
+)
+```
+
+Description: The detector on slit1 fires randomly. Some runs: IO differs → collapse. Other runs: both paths have no IO → interference. Over many runs, fringe visibility decreases. (Note: each path has an independent random seed.)
+
+### Experiment 6: Delayed Observation (Wheeler's Delayed Choice)
+
+```javascript
+exec(
+  function() {
+    setTimeout(function() { console.log('slit1') }, 1000);
+    return 1;
+  },
+  function() {
+    setTimeout(function() { console.log('slit2') }, 1000);
+    return -1;
+  }
+)
+```
+
+Description: The return value executes first (photon "passes through slits"), the observation happens later in setTimeout. Pre-execution flattens time — result is still collapse. Time ordering doesn't matter.
+
+### Experiment 7: Delayed Choice + Imperfect Detector
+
+```javascript
+exec(
+  function() {
+    setTimeout(function() {
+      if (Math.random() > 0.5) console.log('delayed click');
+    }, 1000);
+    return 1;
+  },
+  function() { return -1 }
+)
+```
+
+Description: After the photon passes, a future random event decides whether to observe. Statistically identical to Experiment 5.
+
+### Experiment 8: Delayed Quantum Eraser + Post-Selection
+
+```javascript
+exec(
+  function() {
+    setTimeout(function() {
+      if (Math.random() > 0.5) console.log('which-path: slit1');
+    }, 500);
+    return 1;
+  },
+  function() { return -1 }
+)
+```
+
+Description: This is the Kim et al. (1999) experiment. Run 10000 times. The total screen shows blurred fringes. But the runtime records each run's mode (interference vs collapse). **Filter by mode:** the interference subset shows clear fringes; the collapse subset shows a diffraction blob. This is post-selection — the pattern was always there, hidden in the aggregate.
+
+**Important:** This experiment requires the UI to support filtering dots by mode. Add toggle buttons: "Show all", "Show interference only", "Show collapse only".
+
+### Experiment 9: Independent Detectors
+
+```javascript
+exec(
+  function() {
+    if (Math.random() > 0.5) console.log('left');
+    return 1;
+  },
+  function() {
+    if (Math.random() > 0.5) console.log('right');
+    return -1;
+  }
+)
+```
+
+Description: Both slits have independent detectors (independent random seeds). ~25% both silent (interference), ~25% both fire with different content (collapse), ~50% one fires one doesn't (collapse). Only ~25% of dots show interference.
+
+### Experiment 10: Detection Efficiency Sweep
+
+```javascript
+var efficiency = 0.3;  // Change this value: 0, 0.25, 0.5, 0.75, 1.0
+
+exec(
+  function() {
+    if (Math.random() < efficiency) console.log('click');
+    return 1;
+  },
+  function() { return -1 }
+)
+```
+
+Description: Vary efficiency from 0 to 1. At 0: pure interference. At 1: pure collapse. Fringes gradually disappear. Consider adding a slider in the UI for this.
+
+### Experiment 11: Indirect Observation (Wrapped Side Effects)
+
+```javascript
+var detect = function(label) { console.log(label) };
+
+exec(
+  function() { detect('slit1'); return 1 },
+  function() { detect('slit2'); return -1 }
+)
+```
+
+Description: The observation is wrapped in another function. The runtime doesn't analyze code — it actually executes and compares IO. No matter how you wrap it, if IO differs, collapse.
+
+### Experiment 12: Schrödinger's Cat — Box Closed
+
+```javascript
+var cat = { status: 'alive' };
+
+exec(
+  function() { cat.status = 'dead';  return 1 },
+  function() { cat.status = 'alive'; return -1 }
+)
+```
+
+Description: The cat's state is modified inside the closures, but there's no console.log anywhere in the entire program. The box is never opened. Result: interference. The cat is in superposition.
+
+### Experiment 13: Schrödinger's Cat — Box Opened
+
+```javascript
+var cat = { status: 'alive' };
+
+exec(
+  function() { cat.status = 'dead';  return 1 },
+  function() { cat.status = 'alive'; return -1 }
+)
+console.log(cat.status);
+```
+
+Description: The only change is `console.log(cat.status)` after exec. Pre-execution covers the entire program, so it sees this future observation. The two paths produce different IO ('dead' vs 'alive'). Result: collapse. The box will be opened — the photon "already knows."
+
+### Experiment 14: Decoherence — Information Leaks from Memory to IO
+
+```javascript
+var detector = { data: null };
+
+exec(
+  function() {
+    detector.data = 'slit1';
+    setTimeout(function() { console.log(detector.data) }, 1000);
+    return 1;
+  },
+  function() {
+    detector.data = 'slit2';
+    setTimeout(function() { console.log(detector.data) }, 1000);
+    return -1;
+  }
+)
+```
+
+Description: Path information is first stored in memory (reversible), then later "amplified" to IO via setTimeout. Result: collapse. Once information couples to the environment (IO), decoherence is irreversible.
+
+### Experiment 15: Uncomputation — Write Then Erase
+
+```javascript
+var detector = { data: null };
+
+exec(
+  function() {
+    detector.data = 'slit1';
+    detector.data = null;
+    return 1;
+  },
+  function() {
+    detector.data = 'slit2';
+    detector.data = null;
+    return -1;
+  }
+)
+```
+
+Description: Path information briefly exists in memory but is erased before any IO occurs. Result: interference. This corresponds to quantum uncomputation — reversible operations preserve coherence.
+
+### Experiment 16: Wigner's Friend
+
+```javascript
+var friendSaw = null;
+
+exec(
+  function() { friendSaw = 'slit1'; return 1 },
+  function() { friendSaw = 'slit2'; return -1 }
+)
+```
+
+Description: The friend "observes" inside the closure (writes to a global variable), but doesn't tell the outside world (no console.log). From Wigner's perspective: the friend is in superposition along with the cat. Result: interference.
+
+```javascript
+var friendSaw = null;
+
+exec(
+  function() { friendSaw = 'slit1'; console.log('friend: slit1'); return 1 },
+  function() { friendSaw = 'slit2'; console.log('friend: slit2'); return -1 }
+)
+```
+
+Description: The friend calls Wigner (IO leaks to outside). Result: collapse.
+
+### Experiment 17: Environment Noise — Not Coupled to Path
+
+```javascript
+var logCount = 0;
+var noisyEnv = function() {
+  logCount++;
+  if (logCount % 3 === 0) console.log('env heartbeat');
+};
+
+exec(
+  function() { noisyEnv(); return 1 },
+  function() { noisyEnv(); return -1 }
+)
+```
+
+Description: Both paths call the same noisy environment function from the same initial state. The noise is identical in both paths. Result: interference. **Noise alone doesn't cause decoherence — only noise that carries which-path information does.**
+
+### Experiment 18: Environment Noise — Coupled to Path
+
+```javascript
+exec(
+  function() { console.log('heartbeat from slit1'); return 1 },
+  function() { console.log('heartbeat from slit2'); return -1 }
+)
+```
+
+Description: The noise now contains path information. Result: collapse. Compare with Experiment 17 to see the crucial distinction.
+
+### Experiment 19: Elitzur-Vaidman Bomb Test
+
+```javascript
+// Test a live bomb:
+exec(
+  function() { console.log('boom'); return 1 },
+  function() { return -1 }
+)
+```
+
+Description: A "live bomb" has console.log (a working detector). A "dud" is a pure function. When testing a live bomb: collapse occurs. If slit1 is chosen → the bomb explodes (log executes). If slit2 is chosen → the bomb doesn't explode, but we know it's live! Because a dud would have produced interference. This is **interaction-free measurement**: learning about the bomb without triggering it.
+
+### Experiment 20: Quantum Zeno Effect
+
+```javascript
+// Repeated observation that doesn't carry path info:
+exec(
+  function() { console.log('check'); return 1 },
+  function() { console.log('check'); return -1 }
+)
+// → interference (IO identical each time)
+```
+
+```javascript
+// Repeated observation that carries path info:
+exec(
+  function() { console.log('slit1 check'); return 1 },
+  function() { console.log('slit2 check'); return -1 }
+)
+// → collapse every time — system locked in particle state
+```
+
+Description: Frequent observation with path information prevents interference — the quantum Zeno effect. Note: since the playground supports only one exec per program, "repeated observation" means multiple console.log calls within the closures, not multiple exec calls.
+
+### Experiment 21: Complementarity
+
+```javascript
+// Choice A: Don't read cat.status → see fringes
+var cat = { status: 'alive' };
+exec(
+  function() { cat.status = 'dead';  return 1 },
+  function() { cat.status = 'alive'; return -1 }
+)
+```
+
+```javascript
+// Choice B: Read cat.status → fringes disappear
+var cat = { status: 'alive' };
+exec(
+  function() { cat.status = 'dead';  return 1 },
+  function() { cat.status = 'alive'; return -1 }
+)
+console.log(cat.status);
+```
+
+Description: Same closures, different post-exec code. You can see the wave pattern (fringes) or know which slit (path info), but not both. This is complementarity.
+
+### Experiment 22: Counterfactual Computation
+
+```javascript
+function dangerousFunction() {
+  console.log('launched the missiles');
+  return 1;
+}
+
+exec(
+  function() { return dangerousFunction() },
+  function() { return -1 }
+)
+```
+
+Description: ~50% of runs choose slit2 — dangerousFunction never executes. But we know it has IO (otherwise we'd see interference). We learned a property of the function without running it.
+
+### Experiment 23: Weak Measurement
+
+```javascript
+exec(
+  function() {
+    if (Math.random() < 0.001) console.log('weak click');
+    return 1;
+  },
+  function() { return -1 }
+)
+```
+
+Description: Detector efficiency is 0.1%. Run 100,000 times. The screen shows near-perfect interference fringes. But ~100 dots came from collapse events — they deviate from the interference distribution. Weak measurement: minimal disturbance per shot, statistical information extraction over many shots.
+
+### Experiment 24: Triple Slit
+
+```javascript
+exec(
+  function() { return -2 },
+  function() { return 0 },
+  function() { return 2 }
+)
+```
+
+Description: Three slits → sharper principal maxima, secondary maxima appear. A richer interference pattern than double-slit.
+
+```javascript
+exec(
+  function() { console.log('slit1'); return -2 },
+  function() { return 0 },
+  function() { return 2 }
+)
+```
+
+Description: Observing any single slit destroys ALL interference. Collapse.
+
+### Experiment 25: Gradual Decoherence
+
+```javascript
+var journal = [];
+
+exec(
+  function() {
+    if (journal.length > 5000) console.log('slit1');
+    journal.push('slit1');
+    return 1;
+  },
+  function() {
+    if (journal.length > 5000) console.log('slit2');
+    journal.push('slit2');
+    return -1;
+  }
+)
+```
+
+Description: This experiment is designed to be run many times in sequence. For the first ~5000 runs, the journal accumulates in memory but no IO occurs → interference. After 5000 runs, the threshold is crossed and IO begins → collapse. The screen shows fringes gradually disappearing. (Note: this requires the runtime to persist global state across runs within a session, which is a special mode.)
+
+## Technical Constraints
+
+- **One `exec()` per program.** No nested or sequential exec calls.
+- **Pre-execution covers the entire program** — code before and after exec.
+- **Only IO is `console.log`.** No other IO channels exist in the sandbox.
+- **Independent random seeds per path.** Path i gets seed derived from `(runSeed, i)`. This prevents false correlations between paths.
+- **Deterministic guarantee:** Same seed → same result. Pre-execution and "real" execution of the chosen path produce identical behavior.
+- **QuickJS via WASM** for the sandbox. Use `quickjs-emscripten` npm package.
+
+## Implementation Notes
+
+- The "screen" canvas should have y-axis matching the slit coordinate space (roughly -5 to +5). Dots are drawn as small bright circles with slight transparency, so overlapping dots create brightness.
+- For "Run N times," use a web worker or requestAnimationFrame loop so the UI remains responsive. Show dots appearing in real-time.
+- The IO comparison is `JSON.stringify` of each IO entry, compared sequentially.
+- For Experiment 8 (post-selection), store each run's mode alongside its dot position. Add filter toggles in the UI.
+- For Experiment 25 (gradual decoherence), add a "persistent globals" mode where global variables survive across runs within a session.
+- The discrete result display should show something like:
+  - `"→ superposition (1 + -1) — interference"` 
+  - `"→ collapse — slit2 chosen (position: -1)"`
+- Bundle size target: keep it reasonable. QuickJS WASM is ~400KB. Use a lightweight code editor.
+- The playground should work offline after initial load.
+
+## What This Is and Isn't
+
+This is an **interactive illustration of quantum complementarity** for programmers. It correctly demonstrates: superposition, wavefunction collapse, which-path information, quantum erasure, delayed choice, post-selection, decoherence, uncomputation, interaction-free measurement, weak measurement, and complementarity.
+
+It is **not** a quantum mechanics simulator. The interference pattern comes from classical wave optics formulas, not from quantum amplitudes. The collapse is a binary decision, not continuous decoherence of a density matrix. These are acceptable simplifications for the educational goal.
