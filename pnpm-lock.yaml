@@ -39,8 +39,8 @@ dependencies:
     specifier: ^2.1.0
     version: 2.1.1
   codice:
-    specifier: ^1.5.4
-    version: 1.5.4(react@0.0.0-experimental-408b38ef-20251023)
+    specifier: ^1.5.5
+    version: 1.5.5(react@0.0.0-experimental-408b38ef-20251023)
   katex:
     specifier: ^0.16.11
     version: 0.16.25
@@ -1092,8 +1092,8 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
-  /codice@1.5.4(react@0.0.0-experimental-408b38ef-20251023):
-    resolution: {integrity: sha512-M2epkmtAKqtYG5P7g5NYPVIQixJ2FS3HTSUlCqpDmADLSHp1CdNl3JtNbmuM7bjAXr6bXyiWq7GEunE5kd2RTw==}
+  /codice@1.5.5(react@0.0.0-experimental-408b38ef-20251023):
+    resolution: {integrity: sha512-wT+TxQDzlBjwYcyyLIjKMo7Vo6hj3h+C4ZINIcl9Ef4iZ7ML2BQcLqIr6g50GPdQK1u9oAZUDTBuLpfwXPiOkQ==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
     dependencies:

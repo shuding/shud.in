@@ -1,8 +1,13 @@
 import { getQuickJS } from 'quickjs-emscripten'
 
+export interface LogEntry {
+  args: string[]
+  delay: number // ms delay from setTimeout (0 if immediate)
+}
+
 export interface PathResult {
   position: number
-  ioTrace: string[][]
+  ioTrace: LogEntry[]
 }
 
 export interface RunResult {
@@ -23,152 +28,156 @@ export async function runExperiment(
   try {
     // Inject the runtime that handles pre-execution internally
     const runtimeCode = `
-      (function(userCode, seed) {
-        // Polyfill setTimeout - runs callback synchronously (pre-execution flattens time)
-        var timers = [];
-        function setTimeout(fn, delay) {
-          timers.push(fn);
-          return timers.length;
+      (function() {
+        var _Math = Math;
+        var _console = typeof console !== 'undefined' ? console : { log: function(){} };
+
+        // Eval user code in an isolated scope with no access to internal state
+        function _exec(code, which, Math, console, setTimeout) {
+          eval(code);
         }
-        function flushTimers() {
-          var toRun = timers.slice();
-          timers = [];
-          for (var i = 0; i < toRun.length; i++) {
-            try { toRun[i](); } catch(e) {}
+
+        return function(userCode, seed) {
+          // Polyfill setTimeout - runs callback synchronously (pre-execution flattens time)
+          // but tracks the delay for real-time playback
+          var timers = [];
+          var currentDelay = 0;
+          function setTimeout(fn, delay) {
+            timers.push({ fn: fn, delay: delay || 0 });
+            return timers.length;
           }
-          // Recursively flush any timers scheduled by timers
-          if (timers.length > 0) flushTimers();
-        }
-
-        // Mulberry32 PRNG
-        function mulberry32(s) {
-          return function() {
-            var t = (s += 0x6d2b79f5);
-            t = Math.imul(t ^ (t >>> 15), t | 1);
-            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-          };
-        }
-
-        // Create isolated path seed
-        function createPathSeed(runSeed, pathIndex) {
-          var h = runSeed ^ (pathIndex * 2654435761);
-          h = Math.imul(h ^ (h >>> 16), 2246822507);
-          h = Math.imul(h ^ (h >>> 13), 3266489909);
-          return (h ^= h >>> 16) >>> 0;
-        }
-
-        // First pass: discover number of closures
-        var numClosures = 0;
-        var closures = [];
-
-        var discoverExec = function() {
-          closures = Array.prototype.slice.call(arguments);
-          numClosures = closures.length;
-        };
-
-        // Run discovery pass
-        timers = [];
-        try {
-          (function(exec) {
-            eval(userCode);
-          })(discoverExec);
-        } catch(e) {}
-
-        if (numClosures === 0) {
-          return JSON.stringify({
-            mode: 'interference',
-            paths: [],
-            screenPosition: 0
-          });
-        }
-
-        // Pre-execute each path
-        var pathResults = [];
-
-        for (var pathIndex = 0; pathIndex < numClosures; pathIndex++) {
-          var ioTrace = [];
-          var execResult = 0;
-          var pathRandom = mulberry32(createPathSeed(seed, pathIndex));
-
-          // Create isolated console for this path
-          var pathConsole = {
-            log: function() {
-              var args = [];
-              for (var i = 0; i < arguments.length; i++) {
-                args.push(String(arguments[i]));
-              }
-              ioTrace.push(args);
+          function flushTimers() {
+            var toRun = timers.slice();
+            timers = [];
+            for (var i = 0; i < toRun.length; i++) {
+              currentDelay = toRun[i].delay;
+              try { toRun[i].fn(); } catch(e) {}
+              currentDelay = 0;
             }
-          };
-
-          // Create isolated Math.random for this path
-          var pathMath = {};
-          for (var k in Math) {
-            if (typeof Math[k] === 'function') {
-              pathMath[k] = Math[k].bind(Math);
-            } else {
-              pathMath[k] = Math[k];
-            }
+            if (timers.length > 0) flushTimers();
           }
-          pathMath.random = pathRandom;
 
-          // Create exec that only runs the pathIndex-th closure
-          var pathExec = (function(idx) {
+          // Mulberry32 PRNG
+          function mulberry32(s) {
             return function() {
-              var fns = Array.prototype.slice.call(arguments);
-              if (idx < fns.length) {
-                execResult = fns[idx]();
-              }
+              var t = (s += 0x6d2b79f5);
+              t = _Math.imul(t ^ (t >>> 15), t | 1);
+              t ^= t + _Math.imul(t ^ (t >>> 7), t | 61);
+              return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
             };
-          })(pathIndex);
+          }
 
-          // Run the code with isolated environment
+          // Create isolated path seed
+          function createPathSeed(runSeed, pathIndex) {
+            var h = runSeed ^ (pathIndex * 2654435761);
+            h = _Math.imul(h ^ (h >>> 16), 2246822507);
+            h = _Math.imul(h ^ (h >>> 13), 3266489909);
+            return (h ^= h >>> 16) >>> 0;
+          }
+
+          // First pass: discover number of closures
+          var numClosures = 0;
+          var closures = [];
+
+          var discoverWhich = function() {
+            closures = Array.prototype.slice.call(arguments);
+            numClosures = closures.length;
+          };
+
           timers = [];
           try {
-            (function(Math, console, exec) {
-              eval(userCode);
-            })(pathMath, pathConsole, pathExec);
-            flushTimers();
+            _exec(userCode, discoverWhich, _Math, _console, setTimeout);
           } catch(e) {}
 
-          pathResults.push({
-            position: typeof execResult === 'number' ? execResult : 0,
-            ioTrace: ioTrace
-          });
-        }
+          if (numClosures === 0) {
+            return JSON.stringify({
+              mode: 'interference',
+              paths: [],
+              screenPosition: 0
+            });
+          }
 
-        // Compare IO traces
-        var allEqual = true;
-        if (pathResults.length > 1) {
-          var firstTrace = JSON.stringify(pathResults[0].ioTrace);
-          for (var i = 1; i < pathResults.length; i++) {
-            if (JSON.stringify(pathResults[i].ioTrace) !== firstTrace) {
-              allEqual = false;
-              break;
+          // Pre-execute each path
+          var pathResults = [];
+
+          for (var pathIndex = 0; pathIndex < numClosures; pathIndex++) {
+            var ioTrace = [];
+            var whichResult = 0;
+            var pathRandom = mulberry32(createPathSeed(seed, pathIndex));
+
+            var pathConsole = {
+              log: function() {
+                var args = [];
+                for (var i = 0; i < arguments.length; i++) {
+                  args.push(String(arguments[i]));
+                }
+                ioTrace.push({ args: args, delay: currentDelay });
+              }
+            };
+
+            var pathMath = {};
+            for (var k in _Math) {
+              if (typeof _Math[k] === 'function') {
+                pathMath[k] = _Math[k].bind(_Math);
+              } else {
+                pathMath[k] = _Math[k];
+              }
+            }
+            pathMath.random = pathRandom;
+
+            var pathWhich = (function(idx) {
+              return function() {
+                var fns = Array.prototype.slice.call(arguments);
+                if (idx < fns.length) {
+                  whichResult = fns[idx]();
+                }
+              };
+            })(pathIndex);
+
+            timers = [];
+            try {
+              _exec(userCode, pathWhich, pathMath, pathConsole, setTimeout);
+              flushTimers();
+            } catch(e) {}
+
+            pathResults.push({
+              position: typeof whichResult === 'number' ? whichResult : 0,
+              ioTrace: ioTrace
+            });
+          }
+
+          // Compare IO traces
+          var allEqual = true;
+          if (pathResults.length > 1) {
+            var firstTrace = JSON.stringify(pathResults[0].ioTrace);
+            for (var i = 1; i < pathResults.length; i++) {
+              if (JSON.stringify(pathResults[i].ioTrace) !== firstTrace) {
+                allEqual = false;
+                break;
+              }
             }
           }
-        }
 
-        var result;
-        if (allEqual) {
-          result = {
-            mode: 'interference',
-            paths: pathResults,
-            screenPosition: 0
-          };
-        } else {
-          var chosenPath = Math.floor(mulberry32(seed)() * pathResults.length);
-          result = {
-            mode: 'collapse',
-            paths: pathResults,
-            chosenPath: chosenPath,
-            screenPosition: pathResults[chosenPath].position
-          };
-        }
+          var result;
+          if (allEqual) {
+            result = {
+              mode: 'interference',
+              paths: pathResults,
+              screenPosition: 0
+            };
+          } else {
+            var chosenPath = _Math.floor(mulberry32(seed)() * pathResults.length);
+            result = {
+              mode: 'collapse',
+              paths: pathResults,
+              chosenPath: chosenPath,
+              screenPosition: pathResults[chosenPath].position
+            };
+          }
 
-        return JSON.stringify(result);
-      })
+          return JSON.stringify(result);
+        };
+      })()
     `
 
     // Evaluate the runtime function
@@ -214,8 +223,8 @@ export async function runExperiment(
     return {
       mode: 'interference',
       paths: [
-        { position: 0, ioTrace: [] },
-        { position: 0, ioTrace: [] },
+        { position: 0, ioTrace: [] as LogEntry[] },
+        { position: 0, ioTrace: [] as LogEntry[] },
       ],
       screenPosition: 0,
     }

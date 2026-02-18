@@ -10,25 +10,25 @@ export const experiments: Experiment[] = [
     id: 'classic-double-slit',
     title: '1. Classic Double Slit — No Observation',
     description:
-      'Both slits are pure functions with no IO. The runtime cannot distinguish which path was taken. Result: interference fringes.',
-    code: `exec(
+      'Both paths are pure functions with no IO. The runtime cannot distinguish which path was taken. Result: interference fringes.',
+    code: `which(
   function () { return 1 },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
     id: 'path-observation',
     title: '2. Path Observation → Collapse',
     description:
-      "Each slit logs different content — which-path information leaks. Result: two diffraction blobs, no fringes.",
-    code: `exec(
+      'Each path logs different content — which-path information leaks. Result: two diffraction blobs, no fringes.',
+    code: `which(
   function () {
-    console.log('slit1')
+    console.log('path1')
     return 1
   },
   function () {
-    console.log('slit2')
-    return -1
+    console.log('path2')
+    return 0
   }
 )`,
   },
@@ -36,28 +36,28 @@ export const experiments: Experiment[] = [
     id: 'one-sided-observation',
     title: '3. One-Sided Observation',
     description:
-      "Only slit1 has a detector. One path has IO, the other doesn't — always distinguishable. Result: collapse, even though slit2 has no detector.",
-    code: `exec(
+      "Only path1 has a detector. One path has IO, the other doesn't — always distinguishable. Result: collapse, even though path2 has no detector.",
+    code: `which(
   function () {
     console.log('detected')
     return 1
   },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
     id: 'quantum-erasure',
     title: '4. Quantum Erasure',
     description:
-      'Both slits have detectors, but they output identical strings. The observer cannot determine which path — information is "erased." Result: interference restored.',
-    code: `exec(
+      'Both paths have detectors, but they output identical strings. The observer cannot determine which path — information is "erased." Result: interference restored.',
+    code: `which(
   function () {
     console.log('photon detected')
     return 1
   },
   function () {
     console.log('photon detected')
-    return -1
+    return 0
   }
 )`,
   },
@@ -65,13 +65,13 @@ export const experiments: Experiment[] = [
     id: 'imperfect-detector',
     title: '5. Imperfect Detector (50% efficiency)',
     description:
-      'The detector on slit1 fires randomly. Some runs: IO differs → collapse. Other runs: both paths have no IO → interference. Over many runs, fringe visibility decreases.',
-    code: `exec(
+      'The detector on path1 fires randomly. Some runs: IO differs → collapse. Other runs: both paths have no IO → interference. Over many runs, fringe visibility decreases.',
+    code: `which(
   function () {
     if (Math.random() > 0.5) console.log('click')
     return 1
   },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
@@ -79,18 +79,18 @@ export const experiments: Experiment[] = [
     title: "6. Delayed Observation (Wheeler's Delayed Choice)",
     description:
       'The return value executes first (photon "passes through slits"), the observation happens later in setTimeout. Pre-execution flattens time — result is still collapse.',
-    code: `exec(
+    code: `which(
   function () {
     setTimeout(function () {
-      console.log('slit1')
+      console.log('path1')
     }, 1000)
     return 1
   },
   function () {
     setTimeout(function () {
-      console.log('slit2')
+      console.log('path2')
     }, 1000)
-    return -1
+    return 0
   }
 )`,
   },
@@ -99,14 +99,14 @@ export const experiments: Experiment[] = [
     title: '7. Delayed Choice + Imperfect Detector',
     description:
       'After the photon passes, a future random event decides whether to observe. Statistically identical to Experiment 5.',
-    code: `exec(
+    code: `which(
   function () {
     setTimeout(function () {
       if (Math.random() > 0.5) console.log('delayed click')
     }, 1000)
     return 1
   },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
@@ -114,29 +114,29 @@ export const experiments: Experiment[] = [
     title: '8. Delayed Quantum Eraser + Post-Selection',
     description:
       'Kim et al. (1999) experiment. Run 10000 times. Filter by mode: interference subset shows fringes, collapse subset shows blob. This is post-selection.',
-    code: `exec(
+    code: `which(
   function () {
     setTimeout(function () {
-      if (Math.random() > 0.5) console.log('which-path: slit1')
+      if (Math.random() > 0.5) console.log('which-path: path1')
     }, 500)
     return 1
   },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
     id: 'independent-detectors',
     title: '9. Independent Detectors',
     description:
-      'Both slits have independent detectors (independent random seeds). ~25% both silent (interference), ~25% both fire with different content (collapse), ~50% one fires one doesn\'t (collapse). Only ~25% of dots show interference.',
-    code: `exec(
+      'Both paths have independent detectors (independent random seeds). ~25% both silent (interference), ~25% both fire with different content (collapse), ~50% one fires one doesn\'t (collapse). Only ~25% of dots show interference.',
+    code: `which(
   function () {
     if (Math.random() > 0.5) console.log('left')
     return 1
   },
   function () {
     if (Math.random() > 0.5) console.log('right')
-    return -1
+    return 0
   }
 )`,
   },
@@ -147,12 +147,12 @@ export const experiments: Experiment[] = [
       'Vary efficiency from 0 to 1. At 0: pure interference. At 1: pure collapse. Fringes gradually disappear.',
     code: `var efficiency = 0.3 // Change: 0, 0.25, 0.5, 0.75, 1.0
 
-exec(
+which(
   function () {
     if (Math.random() < efficiency) console.log('click')
     return 1
   },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
@@ -164,9 +164,9 @@ exec(
   console.log(label)
 }
 
-exec(
-  function () { detect('slit1'); return 1 },
-  function () { detect('slit2'); return -1 }
+which(
+  function () { detect('path1'); return 1 },
+  function () { detect('path2'); return 0 }
 )`,
   },
   {
@@ -176,21 +176,21 @@ exec(
       "The cat's state is modified inside the closures, but there's no console.log anywhere. The box is never opened. Result: interference. The cat is in superposition.",
     code: `var cat = { status: 'alive' }
 
-exec(
+which(
   function () { cat.status = 'dead';  return 1 },
-  function () { cat.status = 'alive'; return -1 }
+  function () { cat.status = 'alive'; return 0 }
 )`,
   },
   {
     id: 'schrodinger-opened',
     title: "13. Schrödinger's Cat — Box Opened",
     description:
-      'The only change is console.log(cat.status) after exec. Pre-execution covers the entire program. The two paths produce different IO. Result: collapse.',
+      'The only change is console.log(cat.status) after which. Pre-execution covers the entire program. The two paths produce different IO. Result: collapse.',
     code: `var cat = { status: 'alive' }
 
-exec(
+which(
   function () { cat.status = 'dead';  return 1 },
-  function () { cat.status = 'alive'; return -1 }
+  function () { cat.status = 'alive'; return 0 }
 )
 
 console.log(cat.status)`,
@@ -202,20 +202,20 @@ console.log(cat.status)`,
       'Path information is first stored in memory (reversible), then later "amplified" to IO via setTimeout. Result: collapse. Once information couples to the environment (IO), decoherence is irreversible.',
     code: `var detector = { data: null }
 
-exec(
+which(
   function () {
-    detector.data = 'slit1'
+    detector.data = 'path1'
     setTimeout(function () {
       console.log(detector.data)
     }, 1000)
     return 1
   },
   function () {
-    detector.data = 'slit2'
+    detector.data = 'path2'
     setTimeout(function () {
       console.log(detector.data)
     }, 1000)
-    return -1
+    return 0
   }
 )`,
   },
@@ -226,16 +226,16 @@ exec(
       'Path information briefly exists in memory but is erased before any IO occurs. Result: interference. This corresponds to quantum uncomputation — reversible operations preserve coherence.',
     code: `var detector = { data: null }
 
-exec(
+which(
   function () {
-    detector.data = 'slit1'
+    detector.data = 'path1'
     detector.data = null
     return 1
   },
   function () {
-    detector.data = 'slit2'
+    detector.data = 'path2'
     detector.data = null
-    return -1
+    return 0
   }
 )`,
   },
@@ -246,9 +246,9 @@ exec(
       'The friend "observes" inside the closure (writes to a global variable), but doesn\'t tell the outside world (no console.log). From Wigner\'s perspective: the friend is in superposition. Result: interference.',
     code: `var friendSaw = null
 
-exec(
-  function () { friendSaw = 'slit1'; return 1 },
-  function () { friendSaw = 'slit2'; return -1 }
+which(
+  function () { friendSaw = 'path1'; return 1 },
+  function () { friendSaw = 'path2'; return 0 }
 )`,
   },
   {
@@ -258,16 +258,16 @@ exec(
       'The friend calls Wigner (IO leaks to outside). Result: collapse.',
     code: `var friendSaw = null
 
-exec(
+which(
   function () {
-    friendSaw = 'slit1'
-    console.log('friend: slit1')
+    friendSaw = 'path1'
+    console.log('friend: path1')
     return 1
   },
   function () {
-    friendSaw = 'slit2'
-    console.log('friend: slit2')
-    return -1
+    friendSaw = 'path2'
+    console.log('friend: path2')
+    return 0
   }
 )`,
   },
@@ -282,9 +282,9 @@ var noisyEnv = function () {
   if (logCount % 3 === 0) console.log('env heartbeat')
 }
 
-exec(
+which(
   function () { noisyEnv(); return 1 },
-  function () { noisyEnv(); return -1 }
+  function () { noisyEnv(); return 0 }
 )`,
   },
   {
@@ -292,14 +292,14 @@ exec(
     title: '18. Environment Noise — Coupled to Path',
     description:
       'The noise now contains path information. Result: collapse. Compare with Experiment 17.',
-    code: `exec(
+    code: `which(
   function () {
-    console.log('heartbeat from slit1')
+    console.log('heartbeat from path1')
     return 1
   },
   function () {
-    console.log('heartbeat from slit2')
-    return -1
+    console.log('heartbeat from path2')
+    return 0
   }
 )`,
   },
@@ -307,14 +307,14 @@ exec(
     id: 'bomb-test',
     title: '19. Elitzur-Vaidman Bomb Test',
     description:
-      'A "live bomb" has console.log (a working detector). When testing: if slit2 is chosen, the bomb doesn\'t explode but we know it\'s live because a dud would show interference. Interaction-free measurement!',
+      'A "live bomb" has console.log (a working detector). When testing: if path2 is chosen, the bomb doesn\'t explode but we know it\'s live because a dud would show interference. Interaction-free measurement!',
     code: `// Test a live bomb:
-exec(
+which(
   function () {
     console.log('boom')
     return 1
   },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
@@ -322,14 +322,14 @@ exec(
     title: '20a. Quantum Zeno — Observation Without Path Info',
     description:
       "Repeated observation that doesn't carry path info. Result: interference (IO identical each time).",
-    code: `exec(
+    code: `which(
   function () {
     console.log('check')
     return 1
   },
   function () {
     console.log('check')
-    return -1
+    return 0
   }
 )`,
   },
@@ -338,14 +338,14 @@ exec(
     title: '20b. Quantum Zeno — Observation With Path Info',
     description:
       'Repeated observation that carries path info. Result: collapse every time — system locked in particle state.',
-    code: `exec(
+    code: `which(
   function () {
-    console.log('slit1 check')
+    console.log('path1 check')
     return 1
   },
   function () {
-    console.log('slit2 check')
-    return -1
+    console.log('path2 check')
+    return 0
   }
 )`,
   },
@@ -356,21 +356,21 @@ exec(
       "Don't read cat.status → see fringes. You can see the wave pattern.",
     code: `var cat = { status: 'alive' }
 
-exec(
+which(
   function () { cat.status = 'dead';  return 1 },
-  function () { cat.status = 'alive'; return -1 }
+  function () { cat.status = 'alive'; return 0 }
 )`,
   },
   {
     id: 'complementarity-particle',
-    title: '21b. Complementarity — Know Which Slit',
+    title: '21b. Complementarity — Know Which Path',
     description:
-      'Read cat.status → fringes disappear. You can know which slit, but not both. This is complementarity.',
+      'Read cat.status → fringes disappear. You can know which path, but not both. This is complementarity.',
     code: `var cat = { status: 'alive' }
 
-exec(
+which(
   function () { cat.status = 'dead';  return 1 },
-  function () { cat.status = 'alive'; return -1 }
+  function () { cat.status = 'alive'; return 0 }
 )
 
 console.log(cat.status)`,
@@ -379,15 +379,15 @@ console.log(cat.status)`,
     id: 'counterfactual',
     title: '22. Counterfactual Computation',
     description:
-      "~50% of runs choose slit2 — dangerousFunction never executes. But we know it has IO (otherwise we'd see interference). We learned a property of the function without running it.",
+      "~50% of runs choose path2 — dangerousFunction never executes. But we know it has IO (otherwise we'd see interference). We learned a property of the function without running it.",
     code: `function dangerousFunction() {
   console.log('launched the missiles')
   return 1
 }
 
-exec(
+which(
   function () { return dangerousFunction() },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
@@ -395,22 +395,22 @@ exec(
     title: '23. Weak Measurement',
     description:
       'Detector efficiency is 0.1%. Run 100,000 times. The screen shows near-perfect interference fringes. But ~100 dots came from collapse events. Minimal disturbance per shot.',
-    code: `exec(
+    code: `which(
   function () {
     if (Math.random() < 0.001) console.log('weak click')
     return 1
   },
-  function () { return -1 }
+  function () { return 0 }
 )`,
   },
   {
     id: 'triple-slit',
     title: '24a. Triple Slit — Interference',
     description:
-      'Three slits → sharper principal maxima, secondary maxima appear. A richer interference pattern than double-slit.',
-    code: `exec(
-  function () { return -2 },
+      'Three paths → sharper principal maxima, secondary maxima appear. A richer interference pattern than double-slit.',
+    code: `which(
   function () { return 0 },
+  function () { return 1 },
   function () { return 2 }
 )`,
   },
@@ -418,13 +418,13 @@ exec(
     id: 'triple-slit-collapse',
     title: '24b. Triple Slit — Observe One',
     description:
-      'Observing any single slit destroys ALL interference. Collapse.',
-    code: `exec(
+      'Observing any single path destroys ALL interference. Collapse.',
+    code: `which(
   function () {
-    console.log('slit1')
-    return -2
+    console.log('path1')
+    return 0
   },
-  function () { return 0 },
+  function () { return 1 },
   function () { return 2 }
 )`,
   },

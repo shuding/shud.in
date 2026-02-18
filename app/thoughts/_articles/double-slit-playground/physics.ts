@@ -3,9 +3,11 @@
 
 const WAVELENGTH = 0.4
 const SCREEN_DISTANCE = 10
-const SCREEN_MIN = -5
-const SCREEN_MAX = 5
+const SCREEN_MIN = -10
+const SCREEN_MAX = 10
 const NUM_SAMPLES = 1000
+// Envelope sigma: intensity ~ exp(-y²/(2σ²)) so center is brighter, tails extend past ±5
+const INTERFERENCE_ENVELOPE_SIGMA = 6
 
 // Wavenumber k = 2π/λ
 const K = (2 * Math.PI) / WAVELENGTH
@@ -42,18 +44,26 @@ function computeInterferenceIntensity(slitPositions: number[]): number[] {
   const intensities: number[] = []
 
   for (const y of screenPositions) {
-    // Sum amplitudes from all slits
+    // Sum amplitudes from all slits (each weighted by 1/sqrt(r) so center is brighter)
     let amplitude: Complex = { re: 0, im: 0 }
     for (const slitY of slitPositions) {
-      // Distance from slit to screen point
-      const r = Math.sqrt(
-        SCREEN_DISTANCE * SCREEN_DISTANCE + (y - slitY) * (y - slitY),
-      )
-      // Phase = k * r
+      const dx = y - slitY
+      const r = Math.sqrt(SCREEN_DISTANCE * SCREEN_DISTANCE + dx * dx)
       const phase = K * r
-      amplitude = complexAdd(amplitude, complexExp(phase))
+      // Amplitude envelope 1/sqrt(r) so intensity falls off away from center
+      const envelope = 1 / Math.sqrt(r)
+      const contrib = complexExp(phase)
+      amplitude = complexAdd(amplitude, {
+        re: contrib.re * envelope,
+        im: contrib.im * envelope,
+      })
     }
-    intensities.push(complexMagnitudeSquared(amplitude))
+    // Gaussian envelope so more dots near center (y=0), fewer toward ±10; allows dots outside ±5
+    const envelope = Math.exp(
+      -(y * y) /
+        (2 * INTERFERENCE_ENVELOPE_SIGMA * INTERFERENCE_ENVELOPE_SIGMA),
+    )
+    intensities.push(complexMagnitudeSquared(amplitude) * envelope)
   }
 
   return intensities

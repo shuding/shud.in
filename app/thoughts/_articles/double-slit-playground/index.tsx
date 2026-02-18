@@ -2,9 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { Editor } from 'codice'
-import { runExperiment, type RunResult } from './sandbox'
+import { runExperiment, type LogEntry } from './sandbox'
 import { sampleInterference, sampleDiffraction, SCREEN_RANGE } from './physics'
-import { experiments } from './experiments'
 
 // Types for accumulated dots
 interface Dot {
@@ -13,15 +12,22 @@ interface Dot {
   logValue: string // first log output for this run (empty string if no output)
 }
 
-export function DoubleSlitPlayground() {
-  const [code, setCode] = useState(experiments[0].code)
-  const [selectedExperiment, setSelectedExperiment] = useState(
-    experiments[0].id,
-  )
+interface PlaygroundProps {
+  code: string
+  simple?: boolean
+  description?: string
+}
+
+export function DoubleSlitPlayground({
+  code: initialCode,
+  description,
+  simple,
+}: PlaygroundProps) {
+  const [code, setCode] = useState(initialCode)
   const [dots, setDots] = useState<Dot[]>([])
   const [consoleLogs, setConsoleLogs] = useState<string[]>([])
-  const [lastResult, setLastResult] = useState<RunResult | null>(null)
   const [isRunning, setIsRunning] = useState(false)
+  const [isRunningOnce, setIsRunningOnce] = useState(false)
   const [filter, setFilter] = useState<string>('all')
   const [isLoaded, setIsLoaded] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -36,8 +42,15 @@ export function DoubleSlitPlayground() {
     })
   }, [])
 
-  // Draw dots on canvas
+  const filteredDots = useMemo(
+    () =>
+      filter === 'all' ? dots : dots.filter((dot) => dot.logValue === filter),
+    [dots, filter],
+  )
+
+  // Draw dots on canvas (only for full mode)
   const drawCanvas = useCallback(() => {
+    if (simple) return
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -53,108 +66,192 @@ export function DoubleSlitPlayground() {
 
     const width = rect.width
     const height = rect.height
-    const padding = 24
+    const padding = 28
 
-    // Light paper background
-    ctx.fillStyle = '#faf9f7'
+    // Transparent background
+    ctx.fillStyle = 'transparent'
     ctx.fillRect(0, 0, width, height)
 
-    // Subtle grid
-    ctx.strokeStyle = '#e8e6e3'
-    ctx.lineWidth = 0.5
-    const gridSpacing = 20
+    // Very subtle dot grid pattern
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.035)'
+    const gridSpacing = 16
     for (let x = padding; x <= width - padding; x += gridSpacing) {
-      ctx.beginPath()
-      ctx.moveTo(x, padding)
-      ctx.lineTo(x, height - padding)
-      ctx.stroke()
-    }
-    for (let y = padding; y <= height - padding; y += gridSpacing) {
-      ctx.beginPath()
-      ctx.moveTo(padding, y)
-      ctx.lineTo(width - padding, y)
-      ctx.stroke()
+      for (let y = padding; y <= height - padding; y += gridSpacing) {
+        ctx.beginPath()
+        ctx.arc(x, y, 0.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
 
-    // Center line
-    ctx.strokeStyle = '#d0cec9'
+    // Center line with dashed style
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)'
     ctx.lineWidth = 1
+    ctx.setLineDash([4, 4])
     ctx.beginPath()
     ctx.moveTo(width / 2, padding)
     ctx.lineTo(width / 2, height - padding)
     ctx.stroke()
+    ctx.setLineDash([])
 
-    // Filter dots
-    const filteredDots = dots.filter((dot) => {
-      if (filter === 'all') return true
-      return dot.logValue === filter
-    })
-
-    // Draw dots
+    // Draw dots with subtle glow
     for (const dot of filteredDots) {
       const normalizedX =
         (dot.x - SCREEN_RANGE.min) / (SCREEN_RANGE.max - SCREEN_RANGE.min)
       const canvasX = padding + normalizedX * (width - 2 * padding)
       const canvasY = padding + dot.y * (height - 2 * padding)
 
+      // Outer glow
       ctx.beginPath()
-      ctx.arc(canvasX, canvasY, 1.8, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(60, 60, 70, 0.5)'
+      ctx.arc(canvasX, canvasY, 3.5, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(55, 65, 81, 0.06)'
+      ctx.fill()
+
+      // Inner dot
+      ctx.beginPath()
+      ctx.arc(canvasX, canvasY, 1.5, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(55, 65, 81, 0.55)'
       ctx.fill()
     }
 
     // Axis labels
-    ctx.fillStyle = '#9ca3af'
-    ctx.font = '9px var(--mono)'
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.font =
+      '9px mono, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace'
     ctx.textAlign = 'center'
-    ctx.fillText(`${SCREEN_RANGE.min}`, padding, height - 6)
-    ctx.fillText(`${SCREEN_RANGE.max}`, width - padding, height - 6)
-    ctx.fillText('0', width / 2, height - 6)
-  }, [dots, filter])
+    ctx.fillText(`${SCREEN_RANGE.min}`, padding, height - 8)
+    ctx.fillText(`${SCREEN_RANGE.max}`, width - padding, height - 8)
+    ctx.fillText('0', width / 2, height - 8)
+  }, [filteredDots, simple])
 
   useEffect(() => {
     drawCanvas()
   }, [drawCanvas])
 
-  // Run a single experiment
+  // Run a single experiment with real setTimeout delays
   const runOnce = useCallback(async () => {
-    if (!isLoaded) return
+    if (!isLoaded || isRunningOnce) return
 
     const seed = Date.now() + runCountRef.current++
     try {
       const result = await runExperiment(code, seed)
+      const pathIndex =
+        result.mode === 'collapse' ? (result.chosenPath ?? 0) : 0
+      const logEntries: LogEntry[] = result.paths[pathIndex]?.ioTrace ?? []
 
-      // Get slit positions from the paths
-      const slitPositions = result.paths.map((p) => p.position)
+      // Check if there are any delayed logs
+      const maxDelay = Math.max(0, ...logEntries.map((e) => e.delay))
 
-      // Sample screen position based on mode
-      let screenY: number
-      if (result.mode === 'interference') {
-        screenY = sampleInterference(slitPositions, seed + 1000)
-      } else {
-        const chosenPosition = slitPositions[result.chosenPath ?? 0]
-        screenY = sampleDiffraction(chosenPosition, seed + 1000)
+      if (simple) {
+        // Simple mode: show 0, 1, or 0.5 for superposition
+        let whichResult: string
+        if (result.mode === 'interference') {
+          const positions = result.paths.map((p) => p.position)
+          const avg = positions.reduce((a, b) => a + b, 0) / positions.length
+          whichResult = avg.toString()
+        } else {
+          const chosenPos = result.paths[result.chosenPath ?? 0]?.position ?? 0
+          whichResult = chosenPos.toString()
+        }
+
+        // Handle delayed logs with real setTimeout
+        if (maxDelay > 0) {
+          setIsRunningOnce(true)
+          const immediateLogs = logEntries.filter((e) => e.delay === 0)
+          const delayedLogs = logEntries.filter((e) => e.delay > 0)
+
+          // Show immediate logs and which result right away
+          setConsoleLogs((prev) => [
+            ...prev,
+            ...immediateLogs.map((e) => e.args.join(' ')),
+            `__WHICH__:${whichResult}`,
+          ])
+
+          // Show delayed console logs after the timeout
+          if (delayedLogs.length > 0) {
+            await new Promise<void>((resolve) => {
+              setTimeout(
+                () => {
+                  setConsoleLogs((prev) => [
+                    ...prev,
+                    ...delayedLogs.map((e) => e.args.join(' ')),
+                  ])
+                  resolve()
+                },
+                Math.min(maxDelay, 2000),
+              )
+            })
+          }
+          setIsRunningOnce(false)
+        } else {
+          // No delays, add logs and which result immediately
+          setConsoleLogs((prev) => [
+            ...prev,
+            ...logEntries.map((e) => e.args.join(' ')),
+            `__WHICH__:${whichResult}`,
+          ])
+        }
+        return
       }
 
-      result.screenPosition = screenY
-      setLastResult(result)
+      // Full mode: sample from physics distribution
+      const slitPositions = result.paths.map((p) => p.position)
 
-      // Get log value from the chosen path (first log entry, or empty string)
-      const pathIndex = result.mode === 'collapse' ? (result.chosenPath ?? 0) : 0
-      const logs = result.paths[pathIndex]?.ioTrace.map((entry) => entry.join(' ')) ?? []
-      const logValue = logs[0] ?? ''
+      let screenX: number
+      if (result.mode === 'interference') {
+        screenX = sampleInterference(slitPositions, seed + 1000)
+      } else {
+        const chosenPosition = slitPositions[result.chosenPath ?? 0]
+        screenX = sampleDiffraction(chosenPosition, seed + 1000)
+      }
 
-      setDots((prev) => [
-        ...prev,
-        { x: screenY, y: Math.random(), logValue },
-      ])
-      if (logs.length > 0) {
-        setConsoleLogs((prev) => [...prev, ...logs])
+      const whichResult = screenX.toString()
+
+      result.screenPosition = screenX
+
+      const logValue = logEntries[0]?.args.join(' ') ?? ''
+
+      setDots((prev) => [...prev, { x: screenX, y: Math.random(), logValue }])
+
+      // Handle delayed logs with real setTimeout
+      if (maxDelay > 0) {
+        setIsRunningOnce(true)
+        const immediateLogs = logEntries.filter((e) => e.delay === 0)
+        const delayedLogs = logEntries.filter((e) => e.delay > 0)
+
+        // Show immediate logs and which result right away
+        setConsoleLogs((prev) => [
+          ...prev,
+          ...immediateLogs.map((e) => e.args.join(' ')),
+          `__WHICH__:${whichResult}`,
+        ])
+
+        if (delayedLogs.length > 0) {
+          await new Promise<void>((resolve) => {
+            setTimeout(
+              () => {
+                setConsoleLogs((prev) => [
+                  ...prev,
+                  ...delayedLogs.map((e) => e.args.join(' ')),
+                ])
+                resolve()
+              },
+              Math.min(maxDelay, 2000),
+            )
+          })
+        }
+        setIsRunningOnce(false)
+      } else {
+        setConsoleLogs((prev) => [
+          ...prev,
+          ...logEntries.map((e) => e.args.join(' ')),
+          `__WHICH__:${whichResult}`,
+        ])
       }
     } catch (err) {
       console.error('Execution error:', err)
+      setIsRunningOnce(false)
     }
-  }, [code, isLoaded])
+  }, [code, isLoaded, isRunningOnce, simple])
 
   // Run multiple times
   const runMany = useCallback(
@@ -188,20 +285,20 @@ export function DoubleSlitPlayground() {
                   screenY = sampleDiffraction(chosenPosition, seed + 1000)
                 }
 
-                // Get log value from the chosen path
-                const pathIndex = result.mode === 'collapse' ? (result.chosenPath ?? 0) : 0
-                const logs = result.paths[pathIndex]?.ioTrace.map((entry) => entry.join(' ')) ?? []
+                const pathIndex =
+                  result.mode === 'collapse' ? (result.chosenPath ?? 0) : 0
+                const logEntries = result.paths[pathIndex]?.ioTrace ?? []
+                const logs = logEntries.map((entry) => entry.args.join(' '))
                 const logValue = logs[0] ?? ''
 
                 setDots((prev) => [
                   ...prev,
                   { x: screenY, y: Math.random(), logValue },
                 ])
-                batchLogs.push(...logs)
+                batchLogs.push(...logs, `__WHICH__:${screenY}`)
 
                 if (i === batch - 1) {
                   result.screenPosition = screenY
-                  setLastResult(result)
                 }
               } catch (err) {
                 console.error('Batch execution error:', err)
@@ -216,7 +313,6 @@ export function DoubleSlitPlayground() {
         }
         completed += batch
 
-        // Yield to UI
         await new Promise((r) => setTimeout(r, 0))
       }
 
@@ -225,42 +321,17 @@ export function DoubleSlitPlayground() {
     [code, isLoaded, isRunning],
   )
 
-  const stopRunning = useCallback(() => {
-    stopRef.current = true
-  }, [])
+  const resetCode = useCallback(() => {
+    if (initialCode) {
+      isSettingCodeRef.current = true
+      setCode(initialCode)
+    }
 
-  const clearScreen = useCallback(() => {
     setDots([])
     setConsoleLogs([])
-    setLastResult(null)
     setFilter('all')
-  }, [])
+  }, [initialCode])
 
-  const resetExperiment = useCallback(() => {
-    const exp =
-      experiments.find((e) => e.id === selectedExperiment) || experiments[0]
-    isSettingCodeRef.current = true
-    setCode(exp.code)
-    setSelectedExperiment(exp.id)
-    setDots([])
-    setLastResult(null)
-  }, [selectedExperiment])
-
-  // Handle experiment selection
-  const handleExperimentChange = useCallback(
-    (id: string) => {
-      const exp = experiments.find((e) => e.id === id)
-      if (exp) {
-        isSettingCodeRef.current = true
-        setSelectedExperiment(id)
-        setCode(exp.code)
-        clearScreen()
-      }
-    },
-    [clearScreen],
-  )
-
-  // Get unique log values for filtering (up to 5)
   const uniqueLogValues = useMemo(() => {
     const values = new Set<string>()
     for (const dot of dots) {
@@ -270,100 +341,22 @@ export function DoubleSlitPlayground() {
     return Array.from(values)
   }, [dots])
 
-  // Deduplicate consecutive console logs
-  const dedupedLogs = useMemo(() => {
-    const result: { message: string; count: number }[] = []
-    for (const log of consoleLogs) {
-      const last = result[result.length - 1]
-      if (last && last.message === log) {
-        last.count++
-      } else {
-        result.push({ message: log, count: 1 })
-      }
-    }
-    return result
-  }, [consoleLogs])
-
-  // Get current experiment description
-  const currentExperiment = experiments.find((e) => e.id === selectedExperiment)
-
-  return (
-    <div className='mt-10 mb-4 w-full min-w-[50vw]'>
-      <div className='border border-neutral-200 rounded-lg bg-white shadow-sm overflow-hidden'>
-        {/* Header */}
-        <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-neutral-100 bg-neutral-50/50'>
-          <select
-            value={selectedExperiment}
-            onChange={(e) => handleExperimentChange(e.target.value)}
-            className='bg-white border border-neutral-200 rounded-md px-3 py-1.5 text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400'
+  // Simple mode UI - refined, minimal
+  if (simple) {
+    return (
+      <div className='my-7'>
+        <div className='overflow-hidden border border-rurikon-border rounded-xs bg-[#fefefe]'>
+          {/* Code editor area */}
+          <div
+            className='[&_pre]:!bg-transparent [&_pre]:!m-0 tracking-normal [&_pre]:min-h-[80px] [&_textarea]:!bg-transparent [&_.codice-editor]:!bg-transparent [&_.codice-title]:hidden [&_textarea]:[word-spacing:0] [&_[data-codice-header-controls]]:!hidden bg-transparent'
+            style={
+              {
+                '--codice-font-family': `var(--mono)`,
+                '--codice-font-size': '13px',
+                '--codice-caret-color': '#374151',
+              } as any
+            }
           >
-            {experiments.map((exp) => (
-              <option key={exp.id} value={exp.id}>
-                {exp.title}
-              </option>
-            ))}
-          </select>
-
-          <div className='flex items-center gap-1.5'>
-            {isRunning ? (
-              <button
-                onClick={stopRunning}
-                className='px-3 py-1.5 text-sm font-medium bg-red-50 hover:bg-red-100 border border-red-200 rounded-md text-red-600'
-              >
-                Stop
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={runOnce}
-                  disabled={!isLoaded}
-                  className='px-3 py-1.5 text-sm font-medium bg-blue-500 hover:bg-blue-600 rounded-md text-white disabled:opacity-40'
-                >
-                  Run
-                </button>
-                <button
-                  onClick={() => runMany(500)}
-                  disabled={!isLoaded}
-                  className='px-3 py-1.5 text-sm font-medium bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-md text-neutral-700 disabled:opacity-40'
-                >
-                  500x
-                </button>
-                <button
-                  onClick={() => runMany(2000)}
-                  disabled={!isLoaded}
-                  className='px-3 py-1.5 text-sm font-medium bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-md text-neutral-700 disabled:opacity-40'
-                >
-                  2000x
-                </button>
-              </>
-            )}
-            <div className='w-px h-5 bg-neutral-200 mx-1' />
-            <button
-              onClick={clearScreen}
-              className='px-2.5 py-1.5 text-sm bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-md text-neutral-500'
-            >
-              Clear
-            </button>
-            <button
-              onClick={resetExperiment}
-              className='px-2.5 py-1.5 text-sm bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-md text-neutral-500'
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
-        {/* Description */}
-        {currentExperiment && (
-          <div className='px-4 py-2.5 text-sm text-neutral-500 border-b border-neutral-100 bg-neutral-50/30'>
-            {currentExperiment.description}
-          </div>
-        )}
-
-        {/* Main content */}
-        <div className='flex flex-col lg:flex-row'>
-          {/* Code editor */}
-          <div className='flex-1 min-w-0 border-b lg:border-b-0 lg:border-r border-neutral-100 bg-neutral-50/50 [&_pre]:!bg-transparent [&_pre]:!m-0 [&_pre]:!p-4 [&_pre]:min-h-[200px] [&_textarea]:!bg-transparent [&_.codice-editor]:!bg-transparent [&_.codice-title]:hidden'>
             <Editor
               value={code}
               lineNumbers={false}
@@ -371,79 +364,211 @@ export function DoubleSlitPlayground() {
                 setCode(text as string)
                 if (isSettingCodeRef.current) {
                   isSettingCodeRef.current = false
-                } else {
-                  setSelectedExperiment('')
                 }
               }}
-              title='experiment.js'
+              title={undefined}
+            />
+          </div>
+
+          {/* Controls */}
+          <div className='flex items-center gap-2 px-3 py-2 border-t border-rurikon-border'>
+            <button
+              onClick={runOnce}
+              disabled={!isLoaded || isRunningOnce}
+              className={`transition-all duration-150 px-3.5 py-1 text-xs font-medium tracking-[0.01em] rounded border-none ${
+                isRunningOnce
+                  ? 'bg-rurikon-100 text-rurikon-800 cursor-not-allowed'
+                  : 'bg-rurikon-800 text-white cursor-pointer'
+              } ${!isLoaded ? 'opacity-50' : ''}`}
+            >
+              {isRunningOnce ? 'Running...' : 'Run'}
+            </button>
+            <button
+              onClick={resetCode}
+              className='transition-colors duration-150 hover:bg-rurikon-50 px-2.5 py-1 text-xs text-rurikon-500 hover:text-rurikon-800 bg-transparent rounded border-none cursor-pointer'
+            >
+              Reset
+            </button>
+          </div>
+
+          {/* Console output */}
+          {consoleLogs.length > 0 && (
+            <div className='max-h-[9.7rem] overflow-y-auto border-t border-rurikon-border px-3.5 py-2.5 bg-black/[0.02] font-mono text-xs leading-[1.6] flex flex-col-reverse'>
+              {consoleLogs.toReversed().map((log, i) =>
+                log.startsWith('__WHICH__:') ? (
+                  <div
+                    key={i}
+                    className='text-blue-600 font-semibold flex items-center gap-1'
+                  >
+                    <span className=''>which = {log.slice(10)}</span>
+                  </div>
+                ) : (
+                  <div key={i} className='text-rurikon-400'>
+                    {log}
+                  </div>
+                ),
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Full mode UI - refined laboratory aesthetic
+  return (
+    <div className='my-10 w-full min-w-[50vw]'>
+      <div className='overflow-hidden border border-rurikon-border rounded-xs bg-[#fefefe]'>
+        {/* Description */}
+        {description && (
+          <div className='px-4 py-2.5 text-[13px] text-gray-500 border-b border-black/[0.04] bg-black/[0.01]'>
+            {description}
+          </div>
+        )}
+
+        {/* Main content */}
+        <div className='flex flex-col lg:flex-row'>
+          {/* Code editor */}
+          <div
+            className='flex-1 min-w-0 [&_pre]:!bg-transparent [&_pre]:!m-0 [&_pre]:min-h-[200px] [&_textarea]:!bg-transparent [&_.codice-editor]:!bg-transparent [&_.codice-title]:hidden [&_textarea]:[word-spacing:0] [&_[data-codice-header-controls]]:!hidden border-r border-rurikon-border'
+            style={
+              {
+                '--codice-font-family': `var(--mono)`,
+                '--codice-font-size': '13px',
+                '--codice-caret-color': '#374151',
+              } as any
+            }
+          >
+            <Editor
+              value={code}
+              lineNumbers={false}
+              onChange={(text) => {
+                setCode(text as string)
+                isSettingCodeRef.current = false
+              }}
+              title={undefined}
             />
           </div>
 
           {/* Canvas */}
-          <div className='w-full lg:w-[340px] flex flex-col'>
-            <div className='relative aspect-[4/3] border-b border-neutral-100'>
-              <canvas
-                ref={canvasRef}
-                className='w-full h-full'
-              />
+          <div className='w-full lg:w-[340px] flex flex-col bg-[#fdfcfa]'>
+            <div className='relative flex flex-col'>
+              <canvas ref={canvasRef} className='w-full h-full aspect-[4/3]' />
               {!isLoaded && (
-                <div className='absolute inset-0 flex items-center justify-center bg-white/90 text-neutral-400 text-sm'>
+                <div className='absolute inset-0 flex items-center justify-center bg-white/90 text-gray-400 text-[13px]'>
                   Loading runtime...
                 </div>
               )}
-            </div>
-
-            {/* Stats & Filters */}
-            <div className='px-3 py-2.5 bg-neutral-50/50'>
-              <div className='flex items-center justify-between text-xs text-neutral-500 mb-2'>
-                <span className='font-medium'>
-                  {dots.length.toLocaleString()} samples
+              {/* Stats & Filters */}
+              <div className='px-3 pb-1 text-[11px] text-gray-400'>
+                <span className='font-medium tabular-nums'>
+                  {filter === 'all'
+                    ? dots.length.toLocaleString()
+                    : filteredDots.length.toLocaleString() +
+                      ' / ' +
+                      dots.length.toLocaleString()}{' '}
+                  samples
                 </span>
               </div>
-              {uniqueLogValues.length > 0 && (
-                <div className='flex flex-wrap gap-1'>
-                  <button
-                    onClick={() => setFilter('all')}
-                    className={`px-2.5 py-1 rounded text-xs font-medium ${
-                      filter === 'all'
-                        ? 'bg-neutral-200 text-neutral-700'
-                        : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {uniqueLogValues.map((value) => (
+              {uniqueLogValues.length > 0 ? (
+                <div className='px-3 pb-2 -mt-1 flex flex-row gap-2 items-center leading-3'>
+                  <div className='flex flex-wrap gap-1'>
                     <button
-                      key={value}
-                      onClick={() => setFilter(value)}
-                      className={`px-2.5 py-1 rounded text-xs font-medium font-mono ${
-                        filter === value
-                          ? 'bg-neutral-700 text-white'
-                          : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                      onClick={() => setFilter('all')}
+                      className={`px-2 py-1 text-[11px] font-medium border-none rounded cursor-pointer select-none tracking-tight ${
+                        filter === 'all'
+                          ? 'bg-rurikon-700 text-white'
+                          : 'bg-rurikon-50 text-rurikon-400'
                       }`}
                     >
-                      {value}
+                      All
                     </button>
-                  ))}
+                    {uniqueLogValues.map((value) => (
+                      <button
+                        key={value}
+                        onClick={() => setFilter(value)}
+                        className={`px-2 py-1 text-[11px] font-medium font-mono border-none rounded cursor-pointer select-none tracking-tight ${
+                          filter === value
+                            ? 'bg-rurikon-700 text-white'
+                            : 'bg-rurikon-50 text-rurikon-400'
+                        }`}
+                      >
+                        log: {value}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
 
+        <div className='flex items-center gap-2 px-3 py-2 border-t border-rurikon-border'>
+          <div className='flex items-center gap-1.5'>
+            {
+              <>
+                <button
+                  onClick={runOnce}
+                  disabled={!isLoaded || isRunningOnce}
+                  className={`transition-all duration-150 px-3.5 py-1 text-xs font-medium tracking-[0.01em] rounded border-none ${
+                    isRunningOnce
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-800 text-white cursor-pointer'
+                  } ${!isLoaded ? 'opacity-50' : ''}`}
+                >
+                  {isRunningOnce ? 'Running...' : 'Run'}
+                </button>
+                <button
+                  onClick={() => runMany(500)}
+                  disabled={!isLoaded}
+                  className={`duration-150 hover:bg-rurikon-50 px-2.5 py-1 text-xs text-rurikon-500 hover:text-rurikon-800 bg-rurikon-50/50 rounded border-none ${
+                    !isLoaded
+                      ? 'cursor-not-allowed opacity-50'
+                      : 'cursor-pointer'
+                  }`}
+                >
+                  500×
+                </button>
+                <button
+                  onClick={() => runMany(2000)}
+                  disabled={!isLoaded}
+                  className={`duration-150 hover:bg-rurikon-50 px-2.5 py-1 text-xs text-rurikon-500 hover:text-rurikon-800 bg-rurikon-50/50 rounded border-none ${
+                    !isLoaded
+                      ? 'cursor-not-allowed opacity-50'
+                      : 'cursor-pointer'
+                  }`}
+                >
+                  2000×
+                </button>
+              </>
+            }
+            <div className='w-px h-6 bg-rurikon-border/50 mx-1' />
+            <button
+              onClick={resetCode}
+              className='duration-150 hover:bg-rurikon-50 px-2.5 py-1 text-xs text-rurikon-500 hover:text-rurikon-800 bg-transparent rounded border-none cursor-pointer'
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
         {/* Console output */}
-        {dedupedLogs.length > 0 && (
-          <div className='border-t border-neutral-100 px-4 py-2.5 bg-neutral-900 font-mono text-xs max-h-32 overflow-y-auto flex flex-col-reverse'>
-            <div>
-              {dedupedLogs.map((log, i) => (
-                <div key={i} className='text-neutral-300'>
-                  {log.message}
-                  {log.count > 1 && (
-                    <span className='text-neutral-500 ml-2'>×{log.count}</span>
-                  )}
+        {consoleLogs.length > 0 && (
+          <div className='max-h-[9.7rem] overflow-y-auto border-t border-rurikon-border px-4 py-2.5 bg-white font-mono text-xs leading-[1.6] flex flex-col-reverse'>
+            {consoleLogs.toReversed().map((log, i) =>
+              log.startsWith('__WHICH__:') ? (
+                <div
+                  key={i}
+                  className='text-blue-600 font-semibold flex items-center gap-1'
+                >
+                  <span className=''>which = {log.slice(10)}</span>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div key={i} className='text-rurikon-400'>
+                  {log}
+                </div>
+              ),
+            )}
           </div>
         )}
       </div>
