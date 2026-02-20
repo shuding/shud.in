@@ -1,10 +1,10 @@
 // Physics for double-slit experiment simulation
-// Multi-slit interference and single-slit diffraction
+// Multi-slit interference with optional phase offset, and single-slit diffraction
 
 const WAVELENGTH = 0.4
 const SCREEN_DISTANCE = 10
-const SCREEN_MIN = -10
-const SCREEN_MAX = 10
+const SCREEN_MIN = -5
+const SCREEN_MAX = 5
 const NUM_SAMPLES = 1000
 // Envelope sigma: intensity ~ exp(-y²/(2σ²)) so center is brighter, tails extend past ±5
 const INTERFERENCE_ENVELOPE_SIGMA = 6
@@ -40,16 +40,22 @@ function complexMagnitudeSquared(c: Complex): number {
 
 // Multi-slit interference pattern
 // Given N slit positions, compute interference pattern on screen
-function computeInterferenceIntensity(slitPositions: number[]): number[] {
+// offset: phase offset applied to all slits except the first (default 0)
+function computeInterferenceIntensity(
+  slitPositions: number[],
+  offset: number = 0,
+): number[] {
   const intensities: number[] = []
 
   for (const y of screenPositions) {
     // Sum amplitudes from all slits (each weighted by 1/sqrt(r) so center is brighter)
     let amplitude: Complex = { re: 0, im: 0 }
-    for (const slitY of slitPositions) {
+    for (let i = 0; i < slitPositions.length; i++) {
+      const slitY = slitPositions[i]
       const dx = y - slitY
       const r = Math.sqrt(SCREEN_DISTANCE * SCREEN_DISTANCE + dx * dx)
-      const phase = K * r
+      // Apply offset to all slits except the first
+      const phase = K * r + (i > 0 ? offset : 0)
       // Amplitude envelope 1/sqrt(r) so intensity falls off away from center
       const envelope = 1 / Math.sqrt(r)
       const contrib = complexExp(phase)
@@ -74,7 +80,7 @@ function computeInterferenceIntensity(slitPositions: number[]): number[] {
 function computeDiffractionIntensity(slitPosition: number): number[] {
   const intensities: number[] = []
   // Narrow width so blobs at different slit positions don't overlap
-  const sigma = 0.25
+  const sigma = 0.5
 
   for (const y of screenPositions) {
     const delta = y - slitPosition
@@ -130,8 +136,9 @@ function mulberry32(seed: number) {
 export function sampleInterference(
   slitPositions: number[],
   seed: number,
+  offset: number = 0,
 ): number {
-  const intensities = computeInterferenceIntensity(slitPositions)
+  const intensities = computeInterferenceIntensity(slitPositions, offset)
   const cdf = intensityToCDF(intensities)
   const random = mulberry32(seed)()
   return sampleFromCDF(cdf, random)
@@ -145,22 +152,25 @@ export function sampleDiffraction(slitPosition: number, seed: number): number {
   return sampleFromCDF(cdf, random)
 }
 
+// Compute phase offset from a log string (for quantum eraser effect)
+// Different strings map to different offsets; strings that differ give complementary fringes
+export function computePhaseOffset(logValue: string): number {
+  if (!logValue) return 0
+  // Simple hash: sum of char codes
+  let hash = 0
+  for (let i = 0; i < logValue.length; i++) {
+    hash = (hash << 5) - hash + logValue.charCodeAt(i)
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  // Map to 0 or π based on hash parity
+  return hash & 1 ? Math.PI : 0
+}
+
 // Get the intensity distribution for visualization
 export function getInterferencePattern(
   slitPositions: number[],
 ): { x: number; intensity: number }[] {
   const intensities = computeInterferenceIntensity(slitPositions)
-  const maxIntensity = Math.max(...intensities)
-  return screenPositions.map((x, i) => ({
-    x,
-    intensity: intensities[i] / maxIntensity,
-  }))
-}
-
-export function getDiffractionPattern(
-  slitPosition: number,
-): { x: number; intensity: number }[] {
-  const intensities = computeDiffractionIntensity(slitPosition)
   const maxIntensity = Math.max(...intensities)
   return screenPositions.map((x, i) => ({
     x,

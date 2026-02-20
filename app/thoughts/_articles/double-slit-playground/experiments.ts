@@ -428,4 +428,22 @@ which(
   function () { return 2 }
 )`,
   },
+  {
+    id: 'complementary-fringes',
+    title: '25. Quantum Eraser — Complementary Fringes',
+    description:
+      'Both paths output to the same set of "eraser detectors" (D3 or D4). When outputs match → interference. D3 and D4 give complementary (π-shifted) fringe patterns that cancel when combined. Filter by log to see fringes; view all to see flat distribution.',
+    code: `which(
+  function () {
+    if (Math.random() < 0.5) console.log('D3')
+    else console.log('D4')
+    return -1
+  },
+  function () {
+    if (Math.random() < 0.5) console.log('D3')
+    else console.log('D4')
+    return 1
+  }
+)`,
+  },
 ]

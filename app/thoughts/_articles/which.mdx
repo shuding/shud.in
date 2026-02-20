@@ -18,7 +18,7 @@ Recently, I found a way. In _WhichScript_.
 
 ## Which path?
 
-Consider a special JavaScript-like language, we call it __WhichScript__. It has only one primitive: `which()`. You pass it two functions to it: representing the two slits. When executing, a single photon passes through “them” and a result will be printed to the screen:
+Consider a special JavaScript-like language, we call it __WhichScript__. It has only one primitive: `which()`. You pass two functions to it, representing the two slits. When executing, a single photon passes through “them” and a result will be printed to the screen:
 
 ```javascript
 which(
@@ -41,7 +41,7 @@ Hit __Run__ to see what happens:
 )`}
 />
 
-Suprisingly, the result is neither `0` nor `1`. It is `0.5`: the photon passed through both paths and formed an _interference_ result. You can adjust the values to see how the result changes.
+Surprisingly, the result is neither `0` nor `1`. It is `0.5`: the photon passed through both paths and formed an _interference_ result. You can adjust the values to see how the result changes.
 
 Now, let's add a `console.log()` to each path. This will allow us to _know_ which path the photon went through:
 
@@ -166,7 +166,7 @@ In Borges's *[The Garden of Forking Paths](https://en.wikipedia.org/wiki/The_Gar
 
 ## Spectrum of probabilities
 
-So far every probability has been a coin flip, you get `0` or `1` or `0.5`. This is a good simplification, but it's not how the world works. In reality, the probability of the photon being at a given position is a continuous function of the position.
+So far the result has been discrete: `0`, `1`, or their superposition `0.5`. This is a good simplification, but it's not how the world works. In reality, the probability of the photon being at a given position is a continuous function of the position.
 
 Now, we set the positions of the two slits to `-1` and `1` for symmetry and let `which()` return the position of the photon on the screen and visualize it:
 
@@ -211,62 +211,91 @@ setTimeout(() => {
 }, 1000)`}
 />
 
-## The eraser, delayed
+Filter by `log: unknown` to see interference fringes: when the detector fails to record the path, coherence is preserved. Filter by `log: path1` or `log: path2` to see single stripes: successful detection causes collapse.
+
+## Complementary fringes
+
+In the [delayed-choice quantum eraser](https://en.wikipedia.org/wiki/Delayed-choice_quantum_eraser) experiment, something stranger happens. The entangled "idler" photon can hit one of several detectors. Some detectors reveal which path; others erase it. But among the eraser detectors, different ones give different fringe patterns: shifted by half a wavelength. When you filter by one detector, you see fringes. Filter by another, you see *inverted* fringes. Combine them all, and the fringes cancel out.
 
 <DoubleSlitPlayground
   code={`which(
-  function () {
-    setTimeout(function () {
-      if (Math.random() > 0.5) console.log('which-path: path1')
-    }, 500)
-    return 1
-  },
-  function () { return 0 }
+    function () {
+      if (Math.random() < 0.5) console.log('D3')
+      else console.log('D4')
+      return -1
+    },
+    function () {
+      if (Math.random() < 0.5) console.log('D3')
+      else console.log('D4')
+      return 1
+    }
 )`}
 />
 
-The detector is delayed *and* random. Whether observation happens at all is decided in the future, by a coin flip. Run it ten thousand times. Look at the screen. No clear pattern. Just scattered dots. Now filter: show only the runs where nothing was logged. Clean fringes appear. Show only the runs where `which-path: path1` was printed. A single blob.
+Both paths can output `"D3"` or `"D4"`. When both output the same value, no which-path information leaks and interference survives. But `"D3"` and `"D4"` give complementary fringe patterns, offset by <InlineMath math="\pi"/>. Filter by `log: D3`: clear fringes. Filter by `log: D4`: fringes, but inverted. View all: the patterns cancel, leaving a flatter distribution with some collapse dots mixed in.
 
-This is the [delayed-choice quantum eraser](https://en.wikipedia.org/wiki/Delayed-choice_quantum_eraser). Kim, Kulik, Shih, and Scully built it in 1999. You cannot see the fringes by looking at the screen alone. You must go back to the console, check which runs produced output, and separate the data. Only then does the pattern emerge from the noise. You cannot learn the answer without asking a question. But asking one question prevents you from asking another.
+This is why you can never see the fringes without post-selection. The information is there, encoded in correlations. But it's hidden in plain sight, split across complementary subsets that perfectly cancel when combined.
 
-## The bomb
+## Further explorations
 
-Elitzur and Vaidman, 1993. You have a batch of bombs. Some are live, some are duds. A live bomb detects photons. A dud does not. Testing a dud:
+WhichScript can demonstrate several other famous thought experiments.
 
-<DoubleSlitPlayground
-  simple
-  code={`which(
-    function () { return 1 },
-    function () { return 0 }
-)
-// → 0.5 (interference)`}
-/>
-
-Testing a live bomb:
+The [Elitzur-Vaidman bomb tester](https://en.wikipedia.org/wiki/Elitzur%E2%80%93Vaidman_bomb_tester): you have a batch of bombs. Some are live (detect photons), some are duds. A dud returns `0.5`. A live bomb causes collapse — but half the time, the photon takes the other path. The bomb didn't fire, yet you know it's live. You learned something about a function without executing it.
 
 <DoubleSlitPlayground
   simple
-  code={`which(
+  code={`// Dud: no detector → 0.5
+// Live: has detector → 0 or 1
+which(
     function () { console.log('boom'); return 1 },
     function () { return 0 }
-)
-// → 0 or 1 (collapse)`}
+)`}
 />
 
-About half the time, the photon goes through path 1 and the bomb explodes. But the other half, it goes through path 2. The bomb did not fire. `console.log()` was never called. And yet you know it is live, because a dud would have returned `0.5`. You learned something about a function without executing it. This is [interaction-free measurement](https://en.wikipedia.org/wiki/Interaction-free_measurement).
-
-## More examples
-
-Unintuitively, WhichScript executes _both_ paths (hence the interference of `0.5`) at the same time (increases the counter only once) when there is no observation:
+[Wigner's friend](https://en.wikipedia.org/wiki/Wigner%27s_friend): a friend observes inside a closed box, but doesn't tell the outside world. From Wigner's perspective, the friend is in superposition — until Wigner opens the box.
 
 <DoubleSlitPlayground
   simple
-  code={`let counter = 0
+  code={`let friendSaw = null
 
 which(
-  function () { console.log(++counter); return 0 },
-  function () { console.log(++counter); return 1 }
+    function () { friendSaw = 'path1'; return 0 },
+    function () { friendSaw = 'path2'; return 1 }
+)
+
+// Box closed → 0.5 (friend in superposition)
+// Uncomment to open the box:
+// console.log(friendSaw)`}
+/>
+
+[Decoherence](https://en.wikipedia.org/wiki/Quantum_decoherence): interference visibility decreases smoothly as detector efficiency increases. Try changing `efficiency` from 0 to 1.
+
+<DoubleSlitPlayground
+  code={`var efficiency = 0.3
+
+which(
+    function () {
+      if (Math.random() < efficiency) console.log('click')
+      return -1
+    },
+    function () { return 1 }
 )`}
+/>
+
+The [no-cloning theorem](https://en.wikipedia.org/wiki/No-cloning_theorem): you cannot copy quantum information without disturbing it. Attempting to "clone" which-path info into multiple variables doesn't help and reading *any* copy collapses the system.
+
+<DoubleSlitPlayground
+  simple
+  code={`let copy1 = null, copy2 = null
+
+which(
+    function () { copy1 = 'p1'; copy2 = 'p1'; return 0 },
+    function () { copy1 = 'p2'; copy2 = 'p2'; return 1 }
+)
+
+// Uncomment either line → collapse
+// console.log(copy1)
+// console.log(copy2)`}
 />
 
 Three-slit interference. Sharper principal maxima. Secondary fringes appear. Add a `console.log()` to any one of the three, and the pattern collapses:

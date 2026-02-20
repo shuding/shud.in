@@ -3,7 +3,12 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { Editor } from 'codice'
 import { runExperiment, type LogEntry } from './sandbox'
-import { sampleInterference, sampleDiffraction, SCREEN_RANGE } from './physics'
+import {
+  sampleInterference,
+  sampleDiffraction,
+  computePhaseOffset,
+  SCREEN_RANGE,
+} from './physics'
 
 // Types for accumulated dots
 interface Dot {
@@ -198,8 +203,12 @@ export function DoubleSlitPlayground({
 
       let screenX: number
       if (result.mode === 'interference') {
-        screenX = sampleInterference(slitPositions, seed + 1000)
+        // Interference: use phase offset from common log value (quantum eraser effect)
+        const commonLog = result.paths[0]?.ioTrace[0]?.args.join(' ') ?? ''
+        const offset = computePhaseOffset(commonLog)
+        screenX = sampleInterference(slitPositions, seed + 1000, offset)
       } else {
+        // Collapse: single-slit diffraction from the chosen path
         const chosenPosition = slitPositions[result.chosenPath ?? 0]
         screenX = sampleDiffraction(chosenPosition, seed + 1000)
       }
@@ -279,8 +288,12 @@ export function DoubleSlitPlayground({
 
                 let screenY: number
                 if (result.mode === 'interference') {
-                  screenY = sampleInterference(slitPositions, seed + 1000)
+                  // Interference: use phase offset from common log value (quantum eraser effect)
+                  const commonLog = result.paths[0]?.ioTrace[0]?.args.join(' ') ?? ''
+                  const offset = computePhaseOffset(commonLog)
+                  screenY = sampleInterference(slitPositions, seed + 1000, offset)
                 } else {
+                  // Collapse: single-slit diffraction from the chosen path
                   const chosenPosition = slitPositions[result.chosenPath ?? 0]
                   screenY = sampleDiffraction(chosenPosition, seed + 1000)
                 }
