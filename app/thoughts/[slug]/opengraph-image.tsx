@@ -46,7 +46,7 @@ export default async function OpenGraphImage(props: {
     >
       <div
         style={{
-          fontSize: 56,
+          fontSize: 82,
           fontWeight: 600,
           color: '#0e0f11',
           lineHeight: 1.4,
@@ -56,11 +56,11 @@ export default async function OpenGraphImage(props: {
           fontFamily: 'GeistPixel-Square',
         }}
       >
-        {metadata.title}
+        {metadata.title + ' →'}
       </div>
       <div
         style={{
-          fontSize: 28,
+          fontSize: 42,
           color: '#4a515b',
           marginTop: 36,
           maxWidth: 900,
