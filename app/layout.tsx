@@ -49,6 +49,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en' className='overflow-x-hidden touch-manipulation'>
+      <style>{`:root {
+  --sans: ${sans.style.fontFamily};
+  --serif: ${serif.style.fontFamily};
+  --mono: ${mono.style.fontFamily};
+}`}</style>
       <body
         className={cn(
           sans.variable,
@@ -57,7 +62,7 @@ export default function RootLayout({
           'w-full p-6 sm:p-10 md:p-14',
           'text-sm leading-6 sm:text-[15px] sm:leading-7 md:text-base md:leading-7',
           'text-rurikon-500',
-          'antialiased'
+          'antialiased',
         )}
       >
         <div className='fixed sm:hidden h-6 sm:h-10 md:h-14 w-full top-0 left-0 z-30 pointer-events-none content-fade-out' />

@@ -91,6 +91,8 @@ body {
   /* Debugger */
   /* background: linear-gradient(to bottom, #ccc, var(--background) 1px);
   background-size: 100% 1.75rem; */
+
+  -webkit-tap-highlight-color: transparent;
 }
 
 i,
@@ -302,5 +304,18 @@ article {
   100% {
     opacity: 1;
     filter: blur(0);
+  }
+}
+
+div[data-codice-editor] {
+  --codice-font-family: var(--mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  --sh-class: hsl(215deg 32% 26%);
+  --sh-sign: hsl(215deg 32% 37% / 65%);
+  --sh-keyword: oklch(0.25 0.09 256.57 / 0.65);
+  --sh-property: oklch(0.46 0.22 259.43);
+  code {
+    white-space: pre-wrap;
+    word-spacing: 0 !important;
+    font-feature-settings: var(--font-features);    
   }
 }

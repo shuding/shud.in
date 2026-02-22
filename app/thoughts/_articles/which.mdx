@@ -1,0 +1,325 @@
+export const metadata = {
+  title: "Which",
+  date: "2026.02.14",
+  description: "The double-slit experiment, expressed as JavaScript.",
+  image: "/og/which.jpg",
+}
+
+# Which
+
+When I was a kid, I read about [light passing through two slits and forming an interference pattern](https://en.wikipedia.org/wiki/Double-slit_experiment), and that merely looking at which slit it went through changed the outcome. I didn’t understand most of what followed. But the image stayed.
+
+<div className="framed [--frame-background:#fdfdfd]">![Double Slit Experiment](double-slit-1.jpg)</div>
+
+Over the years, variants of the experiment kept finding me. The [delayed-choice experiment](https://en.wikipedia.org/wiki/Wheeler%27s_delayed-choice_experiment), where a decision made *after* the photon has passed the slits still determines its behavior, as if the future reaches back. The [quantum eraser](https://en.wikipedia.org/wiki/Quantum_eraser_experiment), where destroying the record of which path was taken *restores* the interference, even retroactively. The [Elitzur-Vaidman bomb test](https://en.wikipedia.org/wiki/Elitzur%E2%80%93Vaidman_bomb_tester), where you learn about an object without ever interacting with it. Each one carried the same quiet shock: reality is not what it seems, and observation is not passive.
+
+I kept wanting to make these things *tangible*. Not as equations or animations, but as something you could touch and modify. Something with the texture of code. The double-slit experiment felt like it should be expressible as a program. I just didn’t know how.
+
+Then I stumbled on a way to do it: _WhichScript_.
+
+## Which path?
+
+Consider a special JavaScript-like language, we call it __WhichScript__. It has only one primitive: `which()`. You pass two functions to it, representing the two slits. When executing, a single photon passes through “them” and a result will be printed to the screen:
+
+```javascript
+which(
+  function path1() { ... },
+  function path2() { ... }
+)
+```
+
+<div className="framed [--frame-background:#fdfdfd]">![Double Slit Experiment](double-slit-2.jpg)</div>
+
+This simple setup is all you need to explore the double-slit experiment. __Passing through__ a slit is like __calling__ that path function. Now, let’s return a value from each path to indicate the path the photon took.
+
+Hit __Run__ to see what happens:
+
+<DoubleSlitPlayground
+  simple
+  code={`which(
+    () => 0,
+    () => 1
+)`}
+/>
+
+Surprisingly, the result is neither `0` nor `1`. It is `0.5`: the photon passed through both paths and formed an _interference_ result. You can adjust the values to see how the result changes.
+
+Now, let’s add a `console.log()` to each path. This will allow us to _know_ which path the photon went through:
+
+<DoubleSlitPlayground
+  simple
+  code={`which(
+    function () { console.log('path1'); return 0 },
+    function () { console.log('path2'); return 1 }
+)`}
+/>
+
+If you run it multiple times, you will see that the result is either `0` or `1`, with logs like `"path1"` or `"path2"` in the console — we know which path the photon took. And the interference (`0.5`) is destroyed. The photon goes through _one path_ at random due to our detector.
+
+This is WhichScript. The entire rule is:
+
+> If you can’t tell which path the photon took, interference survives. If you can, the wave function collapses.
+
+## One-sided detectors
+
+What if we place a detector at only one path?
+
+<DoubleSlitPlayground
+  simple
+  code={`which(
+    function () { console.log('detected'); return 0 },
+    function () { return 1 }
+)`}
+/>
+
+It’s still distinguishable, and it always collapses. The result is `0` or `1`. It doesn’t matter that you only watched one path: the absence of a message is itself a message.
+
+## What _observation_ really means
+
+Here is the subtle part, the part that took physicists decades. Observation is not "having a side effect." It is having a side effect *that reveals which path was taken*.
+
+<DoubleSlitPlayground
+  simple
+  code={`which(
+    function () { console.log('photon detected'); return 0 },
+    function () { console.log('photon detected'); return 1 }
+)`}
+/>
+
+Both paths print the same string. An observer sees `"photon detected"` on the console but cannot tell which path the photon went through. The which-path information has been *erased*. The photon passes through both and the result is `0.5`. This is [quantum erasure](https://en.wikipedia.org/wiki/Quantum_eraser_experiment), in four lines of WhichScript.
+
+You can also try to trick the system by leaking the information to the outside world:
+
+<DoubleSlitPlayground
+  simple
+  code={`let isFirstPath = false
+
+which(
+    function () { isFirstPath = true; return 0 },
+    function () { return 1 }
+)
+
+console.log(isFirstPath)`}
+/>
+
+But the photon is still smart enough to know that it’s being observed: `0.5` is gone. Let’s try erasing the information again by adding `isFirstPath = undefined`, after it’s been leaked:
+
+<DoubleSlitPlayground
+  simple
+  code={`let isFirstPath = false
+
+which(
+    function () { isFirstPath = true; return 0 },
+    function () { return 1 }
+)
+
+isFirstPath = undefined
+
+console.log(isFirstPath)`}
+/>
+
+Interference is restored via [uncomputation](https://en.wikipedia.org/wiki/Uncomputation).
+
+## Schrödinger’s cat
+
+6 lines of WhichScript to put [a cat in superposition](https://en.wikipedia.org/wiki/Schr%C3%B6dinger%27s_cat):
+
+<DoubleSlitPlayground
+  simple
+  code={`var cat = { status: 'alive' }
+
+which(
+    function () { cat.status = 'dead'; return 1 },
+    function () { cat.status = 'alive'; return 0 }
+)`}
+/>
+
+If you add a `console.log(cat.status)` after `which()`, you’ll open the box.
+
+## Delayed observation
+
+> The past has no existence except as it is recorded in the present.  
+> — John Archibald Wheeler
+
+Here is where things get unsettling. We delay the observation until after the photon has passed and the `which()` result is already determined:
+
+<DoubleSlitPlayground
+  simple
+  code={`which(
+    function () {
+      setTimeout(() => { console.log('path1') }, 1000)
+      return 1
+    },
+    function () {
+      setTimeout(() => { console.log('path2') }, 1000)
+      return 0
+    }
+)`}
+/>
+
+The photon can know the future. We can never see interference and which-path information _at the same time_. Changing both `console.log()`s to print the same string restores interference but again, the which-path information is gone.
+
+John Archibald Wheeler proposed this [thought experiment](https://en.wikipedia.org/wiki/Wheeler%27s_delayed-choice_experiment) in 1978. The decision to observe can be made after the photon has passed the slits, and the result is still consistent, as if the photon knew the future.
+
+In Borges’s *[The Garden of Forking Paths](https://en.wikipedia.org/wiki/The_Garden_of_Forking_Paths)*, Ts’ui Pên builds a novel in which all possible outcomes of every event occur simultaneously, a labyrinth not of space but of time. `which` does something similar: it walks every forking path before the world settles into one. The garden is the superposition. The collapse is the choice of which path to read aloud.
+
+---
+
+## Spectrum of probabilities
+
+So far the result has been discrete: `0`, `1`, or their superposition `0.5`. This is a good simplification, but it’s not how the world works. In reality, the probability of the photon being at a given position is a continuous function of the position.
+
+Now, we set the positions of the two slits to `-1` and `1` for symmetry and let `which()` return the position of the photon on the screen and visualize it:
+
+<DoubleSlitPlayground
+  code={`which(
+    function () { return -1 },
+    function () { return 1 }
+)`}
+/>
+
+Run it many times. Perfect interference pattern appears in the screen. With detectors, we just see two stripes because of the collapse:
+
+<DoubleSlitPlayground
+  code={`which(
+    function () { console.log('path1'); return -1 },
+    function () { console.log('path2'); return 1 }
+)`}
+/>
+
+The filters, `log: path1` and `log: path2`, toggle the visibility of the dots when the corresponding log value was recorded from our detectors.
+
+The toggling of the filters brings something interesting to the table, and we’ll explore it in the next few experiments.
+
+## Complementary fringes
+
+In the [delayed-choice quantum eraser](https://en.wikipedia.org/wiki/Delayed-choice_quantum_eraser) experiment, something stranger happens. The entangled "idler" photon can hit one of several detectors. Some detectors reveal which path; others erase it. But among the eraser detectors, different ones give different fringe patterns: shifted by half a wavelength. When you filter by one detector, you see fringes. Filter by another, you see *inverted* fringes. Combine them all, and the fringes cancel out.
+
+<DoubleSlitPlayground
+  code={`which(
+    function () {
+      if (Math.random() < 0.5) console.log('D3')
+      else console.log('D4')
+      return -1
+    },
+    function () {
+      if (Math.random() < 0.5) console.log('D3')
+      else console.log('D4')
+      return 1
+    }
+)`}
+/>
+
+Both paths can output `"D3"` or `"D4"`. When both output the same value, no which-path information leaks and interference survives. But `"D3"` and `"D4"` give complementary fringe patterns, offset by <InlineMath math="\pi"/>. Filter by `log: D3`: clear fringes. Filter by `log: D4`: fringes, but inverted. View all: the patterns cancel, leaving a flatter distribution with some collapse dots mixed in.
+
+This is why you can never see the fringes without post-selection. The information is there, encoded in correlations. But it’s hidden in plain sight, split across complementary subsets that perfectly cancel when combined.
+
+## The imperfect detector
+
+A detector that only logs the correct path half the time:
+
+<DoubleSlitPlayground
+  code={`let path = undefined
+
+which(
+    function () { path = 'path1'; return -1 },
+    function () { path = 'path2'; return 1 }
+)
+
+setTimeout(() => {
+    if (Math.random() > 0.5) {
+      console.log(path)
+    } else {
+      console.log('unknown')
+    }
+}, 1000)`}
+/>
+
+Filter by `log: unknown` to see interference fringes: when the detector fails to record the path, coherence is preserved. Filter by `log: path1` or `log: path2` to see single stripes: successful detection causes collapse.
+
+## Further explorations
+
+WhichScript can demonstrate several other famous thought experiments.
+
+The [Elitzur-Vaidman bomb tester](https://en.wikipedia.org/wiki/Elitzur%E2%80%93Vaidman_bomb_tester): you have a batch of bombs. Some are live (detect photons), some are duds. A dud returns `0.5`. A live bomb causes collapse — but half the time, the photon takes the other path. The bomb didn’t fire, yet you know it’s live. You learned something about a function without executing it.
+
+<DoubleSlitPlayground
+  simple
+  code={`// Dud: no detector → 0.5
+// Live: has detector → 0 or 1
+which(
+    function () { console.log('boom'); return 1 },
+    function () { return 0 }
+)`}
+/>
+
+[Wigner's friend](https://en.wikipedia.org/wiki/Wigner%27s_friend): a friend observes inside a closed box, but doesn't tell the outside world. From Wigner's perspective, the friend is in superposition — until Wigner opens the box.
+
+<DoubleSlitPlayground
+  simple
+  code={`let friendSaw = null
+
+which(
+    function () { friendSaw = 'path1'; return 0 },
+    function () { friendSaw = 'path2'; return 1 }
+)
+
+// Box closed → 0.5 (friend in superposition)
+// Uncomment to open the box:
+// console.log(friendSaw)`}
+/>
+
+[Decoherence](https://en.wikipedia.org/wiki/Quantum_decoherence): interference visibility decreases smoothly as detector efficiency increases. Try changing `efficiency` from 0 to 1.
+
+<DoubleSlitPlayground
+  code={`var efficiency = 0.3
+
+which(
+    function () {
+      if (Math.random() < efficiency) console.log('click')
+      return -1
+    },
+    function () { return 1 }
+)`}
+/>
+
+The [no-cloning theorem](https://en.wikipedia.org/wiki/No-cloning_theorem): you cannot copy quantum information without disturbing it. Attempting to "clone" which-path info into multiple variables doesn’t help and reading *any* copy collapses the system.
+
+<DoubleSlitPlayground
+  simple
+  code={`let copy1 = null, copy2 = null
+
+which(
+    function () { copy1 = 'p1'; copy2 = 'p1'; return 0 },
+    function () { copy1 = 'p2'; copy2 = 'p2'; return 1 }
+)
+
+// Uncomment either line → collapse
+// console.log(copy1)
+// console.log(copy2)`}
+/>
+
+Three-slit interference. Sharper principal maxima. Secondary fringes appear. Add a `console.log()` to any one of the three, and the pattern collapses:
+
+<DoubleSlitPlayground
+  code={`which(
+    function () { return -1 },
+    function () { return 0 },
+    function () { return 1 }
+)`}
+/>
+
+## What this is
+
+> I think I can safely say that nobody understands quantum mechanics.  
+> — Richard Feynman
+
+This is not a quantum computer. It uses classical wave optics and a binary collapse rule.
+
+There is one important simplification. In this runtime, only `console.log()` counts as observation. Writing to a variable does not. This means you can store which-path information in _memory_, and as long as it never reaches a `console.log()`, interference survives. In real physics, this is not quite right. An idler photon flying off into deep space, never to be detected by anyone, still destroys interference. Information doesn’t need to be read. It only needs to exist _somewhere_ in the physical world.
+
+But a program is not the physical world. A program is finite. which sees the entire program, all of its future. If a variable never flows into a `console.log()`, that is not a guess or a hope. It is a mathematical certainty. The information is sealed inside a closed system with no exit. There is no stray photon, no thermal fluctuation, no environment to couple with. In this universe, what is never observed is truly never observed.
+
+What this runtime is, I think, is a faithful executable diagram of [complementarity](https://en.wikipedia.org/wiki/Complementarity_(physics)), the principle that [Niels Bohr](https://en.wikipedia.org/wiki/Niels_Bohr) considered the heart of quantum mechanics. You can have interference or which-path knowledge, but never both. The boundary between them is drawn by information.
+
+Every experiment here follows from one rule: compare the logs. I did not program the delayed-choice behavior, the quantum eraser, the bomb test, or the decoherence dynamics. They _emerged_. The fact that a single rule about `console.log()` produces a zoo of quantum phenomena is, I think, the interesting part. Feynman said the double-slit experiment contains "the only mystery" of quantum mechanics. I don’t know if that’s true. But it contains more than I expected.

@@ -24,7 +24,7 @@ export default async function Page(props: {
 
 export async function generateStaticParams() {
   const articles = await fs.readdir(
-    path.join(process.cwd(), 'app', 'thoughts', '_articles')
+    path.join(process.cwd(), 'app', 'thoughts', '_articles'),
   )
 
   return articles
@@ -44,6 +44,17 @@ export async function generateMetadata(props: {
   const params = await props.params
   const metadata = (await import('../_articles/' + `${params.slug}.mdx`))
     .metadata
+
+  if (metadata.image) {
+    return {
+      title: metadata.title,
+      description: metadata.description,
+      openGraph: {
+        images: [metadata.image],
+      },
+    }
+  }
+
   return {
     title: metadata.title,
     description: metadata.description,
