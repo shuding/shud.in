@@ -36,9 +36,12 @@ export function DoubleSlitPlayground({
   const [filter, setFilter] = useState<string>('all')
   const [isLoaded, setIsLoaded] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const lastDrawnCountRef = useRef(0)
   const runCountRef = useRef(0)
   const stopRef = useRef(false)
   const isSettingCodeRef = useRef(false)
+  const rafIdRef = useRef<number>(0)
 
   // Load QuickJS on mount
   useEffect(() => {
@@ -53,84 +56,151 @@ export function DoubleSlitPlayground({
     [dots, filter],
   )
 
+  // Create background canvas with static elements (grid, axes)
+  const createBackground = useCallback(
+    (width: number, height: number, dpr: number) => {
+      const bgCanvas = document.createElement('canvas')
+      bgCanvas.width = width * dpr
+      bgCanvas.height = height * dpr
+      const ctx = bgCanvas.getContext('2d')!
+      ctx.scale(dpr, dpr)
+
+      const padding = 28
+
+      // Very subtle dot grid pattern
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.035)'
+      const gridSpacing = 16
+      for (let x = padding; x <= width - padding; x += gridSpacing) {
+        for (let y = padding; y <= height - padding; y += gridSpacing) {
+          ctx.beginPath()
+          ctx.arc(x, y, 0.5, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+
+      // Center line with dashed style
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([4, 4])
+      ctx.beginPath()
+      ctx.moveTo(width / 2, padding)
+      ctx.lineTo(width / 2, height - padding)
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      // Axis labels
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+      ctx.font =
+        '9px mono, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText(`${SCREEN_RANGE.min}`, padding, height - 8)
+      ctx.fillText(`${SCREEN_RANGE.max}`, width - padding, height - 8)
+      ctx.fillText('0', width / 2, height - 8)
+
+      return bgCanvas
+    },
+    [],
+  )
+
   // Draw dots on canvas (only for full mode)
-  const drawCanvas = useCallback(() => {
-    if (simple) return
-    const canvas = canvasRef.current
-    if (!canvas) return
+  const drawCanvas = useCallback(
+    (forceFullRedraw = false) => {
+      if (simple) return
+      const canvas = canvasRef.current
+      if (!canvas) return
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
 
-    // Handle DPI scaling
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    ctx.scale(dpr, dpr)
+      const dpr = window.devicePixelRatio || 1
+      const rect = canvas.getBoundingClientRect()
+      const width = rect.width
+      const height = rect.height
+      const padding = 28
 
-    const width = rect.width
-    const height = rect.height
-    const padding = 28
+      // Check if canvas needs resizing
+      const needsResize =
+        canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr
 
-    // Transparent background
-    ctx.fillStyle = 'transparent'
-    ctx.fillRect(0, 0, width, height)
+      if (needsResize) {
+        canvas.width = rect.width * dpr
+        canvas.height = rect.height * dpr
+        ctx.scale(dpr, dpr)
+        bgCanvasRef.current = createBackground(width, height, dpr)
+        forceFullRedraw = true
+      }
 
-    // Very subtle dot grid pattern
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.035)'
-    const gridSpacing = 16
-    for (let x = padding; x <= width - padding; x += gridSpacing) {
-      for (let y = padding; y <= height - padding; y += gridSpacing) {
+      // Create background if needed
+      if (!bgCanvasRef.current) {
+        bgCanvasRef.current = createBackground(width, height, dpr)
+      }
+
+      const dotsToRender = filteredDots
+      const startIndex = forceFullRedraw ? 0 : lastDrawnCountRef.current
+
+      // Full redraw needed
+      if (forceFullRedraw || startIndex === 0) {
+        // Clear and draw background
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(bgCanvasRef.current, 0, 0, width, height)
+        lastDrawnCountRef.current = 0
+      }
+
+      // Draw only new dots (or all if full redraw)
+      const dotsSlice =
+        startIndex === 0 ? dotsToRender : dotsToRender.slice(startIndex)
+
+      for (const dot of dotsSlice) {
+        const normalizedX =
+          (dot.x - SCREEN_RANGE.min) / (SCREEN_RANGE.max - SCREEN_RANGE.min)
+        const canvasX = padding + normalizedX * (width - 2 * padding)
+        const canvasY = padding + dot.y * (height - 2 * padding)
+
+        // Outer glow
         ctx.beginPath()
-        ctx.arc(x, y, 0.5, 0, Math.PI * 2)
+        ctx.arc(canvasX, canvasY, 3.5, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(55, 65, 81, 0.06)'
+        ctx.fill()
+
+        // Inner dot
+        ctx.beginPath()
+        ctx.arc(canvasX, canvasY, 1.5, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(55, 65, 81, 0.55)'
         ctx.fill()
       }
-    }
 
-    // Center line with dashed style
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)'
-    ctx.lineWidth = 1
-    ctx.setLineDash([4, 4])
-    ctx.beginPath()
-    ctx.moveTo(width / 2, padding)
-    ctx.lineTo(width / 2, height - padding)
-    ctx.stroke()
-    ctx.setLineDash([])
+      lastDrawnCountRef.current = dotsToRender.length
+    },
+    [filteredDots, simple, createBackground],
+  )
 
-    // Draw dots with subtle glow
-    for (const dot of filteredDots) {
-      const normalizedX =
-        (dot.x - SCREEN_RANGE.min) / (SCREEN_RANGE.max - SCREEN_RANGE.min)
-      const canvasX = padding + normalizedX * (width - 2 * padding)
-      const canvasY = padding + dot.y * (height - 2 * padding)
-
-      // Outer glow
-      ctx.beginPath()
-      ctx.arc(canvasX, canvasY, 3.5, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(55, 65, 81, 0.06)'
-      ctx.fill()
-
-      // Inner dot
-      ctx.beginPath()
-      ctx.arc(canvasX, canvasY, 1.5, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(55, 65, 81, 0.55)'
-      ctx.fill()
-    }
-
-    // Axis labels
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-    ctx.font =
-      '9px mono, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace'
-    ctx.textAlign = 'center'
-    ctx.fillText(`${SCREEN_RANGE.min}`, padding, height - 8)
-    ctx.fillText(`${SCREEN_RANGE.max}`, width - padding, height - 8)
-    ctx.fillText('0', width / 2, height - 8)
-  }, [filteredDots, simple])
+  // Track filter changes to force full redraw
+  const prevFilterRef = useRef(filter)
 
   useEffect(() => {
-    drawCanvas()
-  }, [drawCanvas])
+    // Cancel any pending RAF
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current)
+    }
+
+    // Schedule draw
+    rafIdRef.current = requestAnimationFrame(() => {
+      const filterChanged = prevFilterRef.current !== filter
+      prevFilterRef.current = filter
+
+      if (filterChanged) {
+        lastDrawnCountRef.current = 0
+      }
+
+      drawCanvas(filterChanged)
+    })
+
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
+    }
+  }, [drawCanvas, filter])
 
   // Run a single experiment with real setTimeout delays
   const runOnce = useCallback(async () => {
@@ -270,63 +340,63 @@ export function DoubleSlitPlayground({
       setIsRunning(true)
       stopRef.current = false
 
-      const batchSize = 50
+      const batchSize = 100
       let completed = 0
 
       while (completed < count && !stopRef.current) {
         const batch = Math.min(batchSize, count - completed)
+        const batchDots: Dot[] = []
         const batchLogs: string[] = []
-        const promises: Promise<void>[] = []
 
-        for (let i = 0; i < batch; i++) {
+        // Run experiments sequentially to avoid overwhelming the VM
+        for (let i = 0; i < batch && !stopRef.current; i++) {
           const seed = Date.now() + runCountRef.current++
-          promises.push(
-            (async () => {
-              try {
-                const result = await runExperiment(code, seed)
-                const slitPositions = result.paths.map((p) => p.position)
+          try {
+            const result = await runExperiment(code, seed)
+            const slitPositions = result.paths.map((p) => p.position)
 
-                let screenY: number
-                if (result.mode === 'interference') {
-                  // Interference: use phase offset from common log value (quantum eraser effect)
-                  const commonLog = result.paths[0]?.ioTrace[0]?.args.join(' ') ?? ''
-                  const offset = computePhaseOffset(commonLog)
-                  screenY = sampleInterference(slitPositions, seed + 1000, offset)
-                } else {
-                  // Collapse: single-slit diffraction from the chosen path
-                  const chosenPosition = slitPositions[result.chosenPath ?? 0]
-                  screenY = sampleDiffraction(chosenPosition, seed + 1000)
-                }
+            let screenY: number
+            if (result.mode === 'interference') {
+              const commonLog =
+                result.paths[0]?.ioTrace[0]?.args.join(' ') ?? ''
+              const offset = computePhaseOffset(commonLog)
+              screenY = sampleInterference(slitPositions, seed + 1000, offset)
+            } else {
+              const chosenPosition = slitPositions[result.chosenPath ?? 0]
+              screenY = sampleDiffraction(chosenPosition, seed + 1000)
+            }
 
-                const pathIndex =
-                  result.mode === 'collapse' ? (result.chosenPath ?? 0) : 0
-                const logEntries = result.paths[pathIndex]?.ioTrace ?? []
-                const logs = logEntries.map((entry) => entry.args.join(' '))
-                const logValue = logs[0] ?? ''
+            const pathIndex =
+              result.mode === 'collapse' ? (result.chosenPath ?? 0) : 0
+            const logEntries = result.paths[pathIndex]?.ioTrace ?? []
+            const logValue = logEntries[0]?.args.join(' ') ?? ''
 
-                setDots((prev) => [
-                  ...prev,
-                  { x: screenY, y: Math.random(), logValue },
-                ])
-                batchLogs.push(...logs, `__WHICH__:${screenY}`)
+            batchDots.push({ x: screenY, y: Math.random(), logValue })
 
-                if (i === batch - 1) {
-                  result.screenPosition = screenY
-                }
-              } catch (err) {
-                console.error('Batch execution error:', err)
-              }
-            })(),
-          )
+            // Only keep last log entry per batch to reduce memory
+            if (i === batch - 1) {
+              batchLogs.push(`__WHICH__:${screenY}`)
+            }
+          } catch (err) {
+            console.error('Batch execution error:', err)
+          }
         }
 
-        await Promise.all(promises)
+        // Single state update per batch
+        if (batchDots.length > 0) {
+          setDots((prev) => [...prev, ...batchDots])
+        }
         if (batchLogs.length > 0) {
-          setConsoleLogs((prev) => [...prev, ...batchLogs])
+          setConsoleLogs((prev) => {
+            // Keep only last 100 logs to prevent memory bloat
+            const combined = [...prev, ...batchLogs]
+            return combined.slice(-100)
+          })
         }
         completed += batch
 
-        await new Promise((r) => setTimeout(r, 0))
+        // Yield to allow UI updates
+        await new Promise((r) => requestAnimationFrame(r))
       }
 
       setIsRunning(false)
@@ -343,6 +413,7 @@ export function DoubleSlitPlayground({
     setDots([])
     setConsoleLogs([])
     setFilter('all')
+    lastDrawnCountRef.current = 0
   }, [initialCode])
 
   const uniqueLogValues = useMemo(() => {
@@ -443,7 +514,7 @@ export function DoubleSlitPlayground({
         <div className='flex flex-col lg:flex-row'>
           {/* Code editor */}
           <div
-            className='flex-1 min-w-0 [&_pre]:!bg-transparent [&_pre]:!m-0 [&_pre]:min-h-[200px] [&_textarea]:!bg-transparent [&_.codice-editor]:!bg-transparent [&_.codice-title]:hidden [&_textarea]:[word-spacing:0] [&_[data-codice-header-controls]]:!hidden border-r border-rurikon-border'
+            className='flex-1 min-w-0 [&_pre]:!bg-transparent [&_pre]:!m-0 [&_pre]:min-h-[200px] [&_textarea]:!bg-transparent [&_.codice-editor]:!bg-transparent [&_.codice-title]:hidden [&_textarea]:[word-spacing:0] [&_[data-codice-header-controls]]:!hidden lg:border-r border-rurikon-border'
             style={
               {
                 '--codice-font-family': `var(--mono)`,

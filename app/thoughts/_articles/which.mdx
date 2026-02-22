@@ -14,7 +14,7 @@ Over the years, variants of the experiment kept finding me. The [delayed-choice 
 
 I kept wanting to make these things *tangible*. Not as equations or animations, but as something you could touch and modify. Something with the texture of code. The double-slit experiment felt like it should be expressible as a program. I just didn't know how.
 
-Recently, I found a way. In _WhichScript_.
+Then I stumbled on a way to do it: _WhichScript_.
 
 ## Which path?
 
@@ -190,29 +190,6 @@ The filters, `log: path1` and `log: path2`, toggle the visibility of the dots wh
 
 The toggling of the filters brings something interesting to the table, and we'll explore it in the next few experiments.
 
-## The imperfect detector
-
-A detector that only logs the correct path half the time:
-
-<DoubleSlitPlayground
-  code={`let path = undefined
-
-which(
-    function () { path = 'path1'; return -1 },
-    function () { path = 'path2'; return 1 }
-)
-
-setTimeout(() => {
-    if (Math.random() > 0.5) {
-      console.log(path)
-    } else {
-      console.log('unknown')
-    }
-}, 1000)`}
-/>
-
-Filter by `log: unknown` to see interference fringes: when the detector fails to record the path, coherence is preserved. Filter by `log: path1` or `log: path2` to see single stripes: successful detection causes collapse.
-
 ## Complementary fringes
 
 In the [delayed-choice quantum eraser](https://en.wikipedia.org/wiki/Delayed-choice_quantum_eraser) experiment, something stranger happens. The entangled "idler" photon can hit one of several detectors. Some detectors reveal which path; others erase it. But among the eraser detectors, different ones give different fringe patterns: shifted by half a wavelength. When you filter by one detector, you see fringes. Filter by another, you see *inverted* fringes. Combine them all, and the fringes cancel out.
@@ -235,6 +212,29 @@ In the [delayed-choice quantum eraser](https://en.wikipedia.org/wiki/Delayed-cho
 Both paths can output `"D3"` or `"D4"`. When both output the same value, no which-path information leaks and interference survives. But `"D3"` and `"D4"` give complementary fringe patterns, offset by <InlineMath math="\pi"/>. Filter by `log: D3`: clear fringes. Filter by `log: D4`: fringes, but inverted. View all: the patterns cancel, leaving a flatter distribution with some collapse dots mixed in.
 
 This is why you can never see the fringes without post-selection. The information is there, encoded in correlations. But it's hidden in plain sight, split across complementary subsets that perfectly cancel when combined.
+
+## The imperfect detector
+
+A detector that only logs the correct path half the time:
+
+<DoubleSlitPlayground
+  code={`let path = undefined
+
+which(
+    function () { path = 'path1'; return -1 },
+    function () { path = 'path2'; return 1 }
+)
+
+setTimeout(() => {
+    if (Math.random() > 0.5) {
+      console.log(path)
+    } else {
+      console.log('unknown')
+    }
+}, 1000)`}
+/>
+
+Filter by `log: unknown` to see interference fringes: when the detector fails to record the path, coherence is preserved. Filter by `log: path1` or `log: path2` to see single stripes: successful detection causes collapse.
 
 ## Further explorations
 

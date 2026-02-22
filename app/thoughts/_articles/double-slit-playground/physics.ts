@@ -11,6 +11,9 @@ const INTERFERENCE_ENVELOPE_SIGMA = 6
 
 // Wavenumber k = 2π/λ
 const K = (2 * Math.PI) / WAVELENGTH
+const SCREEN_DISTANCE_SQ = SCREEN_DISTANCE * SCREEN_DISTANCE
+const INTERFERENCE_ENVELOPE_DENOM =
+  2 * INTERFERENCE_ENVELOPE_SIGMA * INTERFERENCE_ENVELOPE_SIGMA
 
 // Precomputed screen positions
 const screenPositions: number[] = []
@@ -18,24 +21,6 @@ for (let i = 0; i < NUM_SAMPLES; i++) {
   screenPositions.push(
     SCREEN_MIN + (i / (NUM_SAMPLES - 1)) * (SCREEN_MAX - SCREEN_MIN),
   )
-}
-
-// Complex number helpers
-interface Complex {
-  re: number
-  im: number
-}
-
-function complexAdd(a: Complex, b: Complex): Complex {
-  return { re: a.re + b.re, im: a.im + b.im }
-}
-
-function complexExp(phase: number): Complex {
-  return { re: Math.cos(phase), im: Math.sin(phase) }
-}
-
-function complexMagnitudeSquared(c: Complex): number {
-  return c.re * c.re + c.im * c.im
 }
 
 // Multi-slit interference pattern
@@ -46,30 +31,23 @@ function computeInterferenceIntensity(
   offset: number = 0,
 ): number[] {
   const intensities: number[] = []
+  const nSlits = slitPositions.length
 
-  for (const y of screenPositions) {
-    // Sum amplitudes from all slits (each weighted by 1/sqrt(r) so center is brighter)
-    let amplitude: Complex = { re: 0, im: 0 }
-    for (let i = 0; i < slitPositions.length; i++) {
+  for (let s = 0; s < NUM_SAMPLES; s++) {
+    const y = screenPositions[s]
+    let re = 0
+    let im = 0
+    for (let i = 0; i < nSlits; i++) {
       const slitY = slitPositions[i]
       const dx = y - slitY
-      const r = Math.sqrt(SCREEN_DISTANCE * SCREEN_DISTANCE + dx * dx)
-      // Apply offset to all slits except the first
+      const r = Math.sqrt(SCREEN_DISTANCE_SQ + dx * dx)
       const phase = K * r + (i > 0 ? offset : 0)
-      // Amplitude envelope 1/sqrt(r) so intensity falls off away from center
       const envelope = 1 / Math.sqrt(r)
-      const contrib = complexExp(phase)
-      amplitude = complexAdd(amplitude, {
-        re: contrib.re * envelope,
-        im: contrib.im * envelope,
-      })
+      re += Math.cos(phase) * envelope
+      im += Math.sin(phase) * envelope
     }
-    // Gaussian envelope so more dots near center (y=0), fewer toward ±10; allows dots outside ±5
-    const envelope = Math.exp(
-      -(y * y) /
-        (2 * INTERFERENCE_ENVELOPE_SIGMA * INTERFERENCE_ENVELOPE_SIGMA),
-    )
-    intensities.push(complexMagnitudeSquared(amplitude) * envelope)
+    const envelope = Math.exp(-(y * y) / INTERFERENCE_ENVELOPE_DENOM)
+    intensities.push((re * re + im * im) * envelope)
   }
 
   return intensities
@@ -79,14 +57,12 @@ function computeInterferenceIntensity(
 // Centered on the slit position with narrow width for distinct blobs
 function computeDiffractionIntensity(slitPosition: number): number[] {
   const intensities: number[] = []
-  // Narrow width so blobs at different slit positions don't overlap
   const sigma = 0.5
+  const twoSigmaSq = 2 * sigma * sigma
 
-  for (const y of screenPositions) {
-    const delta = y - slitPosition
-    // Gaussian distribution centered at slit position
-    const intensity = Math.exp(-(delta * delta) / (2 * sigma * sigma))
-    intensities.push(intensity)
+  for (let s = 0; s < NUM_SAMPLES; s++) {
+    const delta = screenPositions[s] - slitPosition
+    intensities.push(Math.exp(-(delta * delta) / twoSigmaSq))
   }
 
   return intensities
@@ -94,14 +70,14 @@ function computeDiffractionIntensity(slitPosition: number): number[] {
 
 // Convert intensity array to cumulative distribution function
 function intensityToCDF(intensities: number[]): number[] {
-  const total = intensities.reduce((a, b) => a + b, 0)
+  let total = 0
+  for (let i = 0; i < intensities.length; i++) total += intensities[i]
   const cdf: number[] = []
   let cumulative = 0
-  for (const intensity of intensities) {
-    cumulative += intensity / total
+  for (let i = 0; i < intensities.length; i++) {
+    cumulative += intensities[i] / total
     cdf.push(cumulative)
   }
-  // Ensure last value is exactly 1
   cdf[cdf.length - 1] = 1
   return cdf
 }
@@ -112,7 +88,7 @@ function sampleFromCDF(cdf: number[], random: number): number {
   let lo = 0
   let hi = cdf.length - 1
   while (lo < hi) {
-    const mid = Math.floor((lo + hi) / 2)
+    const mid = (lo + hi) >>> 1
     if (cdf[mid] < random) {
       lo = mid + 1
     } else {
@@ -171,7 +147,11 @@ export function getInterferencePattern(
   slitPositions: number[],
 ): { x: number; intensity: number }[] {
   const intensities = computeInterferenceIntensity(slitPositions)
-  const maxIntensity = Math.max(...intensities)
+  let maxIntensity = 0
+  for (let i = 0; i < intensities.length; i++) {
+    const v = intensities[i]
+    if (v > maxIntensity) maxIntensity = v
+  }
   return screenPositions.map((x, i) => ({
     x,
     intensity: intensities[i] / maxIntensity,

@@ -91,6 +91,8 @@ body {
   /* Debugger */
   /* background: linear-gradient(to bottom, #ccc, var(--background) 1px);
   background-size: 100% 1.75rem; */
+
+  -webkit-tap-highlight-color: transparent;
 }
 
 i,
