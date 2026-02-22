@@ -6,12 +6,20 @@ import path from 'path'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const fontPath = path.join(process.cwd(), 'app', '_fonts', 'Inter-Medium.ttf')
-const fontBuffer = readFileSync(fontPath)
 const fonts = [
   {
     name: 'Inter',
-    data: fontBuffer,
+    data: readFileSync(
+      path.join(process.cwd(), 'app', '_fonts', 'Inter-Medium.ttf'),
+    ),
+    style: 'normal' as const,
+    weight: 600 as const,
+  },
+  {
+    name: 'GeistPixel-Square',
+    data: readFileSync(
+      path.join(process.cwd(), 'app', '_fonts', 'GeistPixel-Square.ttf'),
+    ),
     style: 'normal' as const,
     weight: 600 as const,
   },
@@ -45,6 +53,7 @@ export default async function OpenGraphImage(props: {
           maxWidth: 1000,
           textWrap: 'pretty',
           letterSpacing: -0.6,
+          fontFamily: 'GeistPixel-Square',
         }}
       >
         {metadata.title}
@@ -57,6 +66,7 @@ export default async function OpenGraphImage(props: {
           maxWidth: 900,
           lineHeight: 1.5,
           letterSpacing: -0.2,
+          fontFamily: 'GeistPixel-Square',
         }}
       >
         {metadata.description}
