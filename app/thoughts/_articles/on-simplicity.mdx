@@ -1,0 +1,204 @@
+export const metadata = {
+  title: 'On Simplicity',
+  date: '2017.12.01',
+  description: "Simplicity isn't about fewer features. It's about finding the right level of abstraction.",
+}
+
+# On Simplicity
+
+[Mak](/mak) is a text editor I created in 2015<Footnote name="first-mak-commit"/>, to get my homework done. I had to submit notes, essays, and reports for some of my college classes. Any simple text editor in the App Store can help, but I quickly realized that none of them felt quite right—**simple is difficult**. That's where this story begins.
+
+At first there was no particular goal for the project. I was just adding features I needed, treating it as an experiment to develop my design instincts. Over the years I never promoted it much, never talked about it publicly—yet its traffic impressed me and held steady. Looking back, Mak still accurately reflects how I think about _design_.
+
+The ideas that came out of iterating on this tool have been drifting around in my head for a long time. So I have to finish this article.
+
+## Notepad
+
+I want **Notepad.exe** inside my Mac. It was the first text editor I ever used, and I still love it.
+
+Why? There are countless<Footnote name="comparison-of-text-editors"/> writing tools out there, and I'm certain any of them is more _powerful_ than Notepad.exe. We have LaTeX-based tools for scientific writing, Microsoft Word for typesetting and publishing, Sublime for technical documentation, Evernote for note-taking, Day One for journaling—each with stacks of competing alternatives.
+
+Yet I've seen it so many times: people with ten Notepads open on their taskbars, using them as temporary clipboards and idea collectors. People with `Untitled.txt` randomly on their desktop, or unsaved Notepad windows kept open until ~~the end of time~~ Windows self-updates.
+
+<Figure src="/static/idea-of-mak/notepad.jpg" alt="Notepad.exe" caption={
+  <span>Notepad.exe</span>
+} />
+
+Why is this little blank box still so attractive?
+
+One Sunday I was sitting at my laptop, thinking through algorithms for some generative art, when a blurry idea surfaced. Without hesitation, I grabbed a piece of paper and started drawing—shapes, diagrams, pseudo code. Only then did I reorganize and digitize it on the computer.
+
+That whole process happened very quickly. I had no idea what the final result would look like at the start. If I had, I would have opened a diagramming tool directly. But only paper could catch that shapeless, fleeting idea. Handy, light, intuitive, non-limiting. And suddenly it answered my **Notepad.exe** question. It's not about _more_. It's about _less_.
+
+## The Wire
+
+Let's take one step back. When we start typing, what are we truly looking for? Are we looking for _power_ from the text editor? Are we looking for fancy _features_ from the tools we use?
+
+No. We are just looking for the perfect reflection of our thoughts, in words. Text editors can't write things for you. A powerful text editor doesn't give you better writing.
+
+From time to time we have those vague thoughts, flowing through our fingers to the keys, to blinking pixels on the screen. Ideas are so _shapeless_, and _writing_ is the process of capturing and translating them: capturing a color in your mind and translating it into the English word; capturing the importance of something and translating it into a sentence in bold.
+
+Writing tools—languages, pen and paper, keyboard and text editor—help move our shapeless thoughts into shapes. They **don't** create anything.
+
+Writing tools are like electrical wires: they transfer energy and information. We want them to maximize our expressiveness, just like we want wires to be superconducting. We want tools to be shapeless, just like we want wires to be wireless.
+
+So for a text editor: we want it to maximize our expressiveness, and minimize its own existence. But how do we approach that goal?
+
+## The Abstraction
+
+When designing a product, it's usually an illusion that we want _more_. What we want is better _abstraction_. The process of finding that better abstraction is called _design_.
+
+> _**Abstraction** in its main sense is a conceptual process where general rules and concepts are derived
+> from the usage and classification of specific examples, literal ("real" or "concrete") signifiers,
+> first principles, or other methods._
+>
+> — Definition of "abstraction" on [Wikipedia](https://en.wikipedia.org/wiki/Abstraction)
+
+That's exactly what design means. **Paper** is the perfect abstraction for its purpose: handy, light, non-limiting. It's the simplest design precisely because it achieves complete abstraction.
+
+So when we talk about simplicity in design—when we say "less is more"—what we're actually saying is:
+
+__Simplicity__ doesn't mean the __number__ of features.  
+__Simplicity__ means the __level__ of abstraction.
+
+And good design means good abstraction.
+
+> _Good design **elevates** the essential functions of a product._
+>
+> — Dieter Rams
+
+In his talk _On the Spectrum of Abstraction_<Footnote name="spectrum-of-abstraction"/> at ReactConf 2016, Cheng Lou shared his understanding of abstraction and power in software—in building libraries, frameworks, and tools for other people. The whole talk is incredibly insightful. On mutability in programming, he said:
+
+> _It's not about potential power of __doing more__. It's about exploiting properties you gain by __doing less__._
+>
+> — Cheng Lou, ReactConf 2016
+
+This had a huge influence on me. It became the philosophy I apply to both product design and code.
+
+Consider the "powerless" quality of a blank piece of paper. It gives you "nothing more"—and that's the point. We are so conditioned to want more that we forget everything has a cost. When a tool has features we don't need, we still pay for them: in attention, in distraction, in decisions. "Nothing more" is a feature, not an oversight.
+
+This is the trap in product design: when you're **designing**, don't play with marketing words in your head. "Simple" and "minimal" are selling words. The designer's question is different—what is the right abstraction? A tool should never limit the expressiveness of the person using it. That's the first principle.
+
+## "Text"
+
+So what's the right abstraction for a text editor? The answer begins with a harder question: what is "text"?
+
+According to [Wikipedia](https://en.wikipedia.org/wiki/Text_editor), most people use __text editors__ and/or __word processors__ to edit text, and "text" refers to __plain text__ and __rich text__:
+
+> Plain text exclusively consists of character representation.  
+> ...  
+> Rich text, on the other hand, may contain metadata, character formatting data, paragraph formatting data, and page specification data.
+
+Rich text is plain text with extra information—metadata, styles, and so on. This is technically correct. But there's a third thing lurking in between, neither plain nor rich.
+
+It is Markdown.
+
+### Content, Structure, and Style
+
+"Text" is actually an abstract concept. But if you look at everything you've ever written, it's basically made of three parts: __content__, __structure__, and __style__.
+
+Content is king. But structure and style both __serve__ the content. Structure gives "meta information" about it: this sentence is a subtitle, that word is emphasized. Structure lets us use the visual metaphors we already know—lists, headings, tables—without much thinking.
+
+Style is something _derived_ from structure: we style different parts with different colors, sizes, and typefaces in order to make some content distinct from others. When organizing ideas or quickly taking notes, we don't need style at all. It can be added later, based on structure, if needed.
+
+Editing content, editing structure, and editing style are therefore three different operations.
+
+### The Problem with Rich Text
+
+Rich text uses style to _represent_ structure. This is beautiful when reading. But when editing, you have to manipulate style in order to manage structure—since you can't edit structure directly.
+
+More importantly, style varies across different websites and documents. It's too easy to get inconsistent, and there's no stable ground truth for what things "should" look like. You end up making the same visual decisions again and again, decisions that have nothing to do with your actual ideas.
+
+### The Power of Markdown
+
+Markdown solves this perfectly. It uses special symbols to mark the _structure_ directly, leaving style to be applied by the renderer. John Gruber, Markdown's creator, said the single biggest inspiration for its syntax was the format of plain text email.<Footnote name="daringfireball"/> It's familiar, easy to read, and looks like plain text.
+
+<Figure src="/static/idea-of-mak/table.png" alt="Format table" width="343"/>
+
+For style—which Markdown doesn't have—editors can use syntax highlighting to improve readability while keeping everything as plain text underneath.
+
+This is also how HTML works. We have both `<b>` and `<strong>`, `<i>` and `<em>`. They may render the same way visually, but they're semantically different. In English, we use italics for emphasis. In other writing systems without an italic convention, the same emphasis might be represented by underlines or dots. Markdown captures structure; style follows.
+
+> _Markdown is intended to be as easy-to-read and easy-to-write as is feasible. Readability, however,
+> is emphasized above all else. A Markdown-formatted document should be publishable as-is, as plain text,
+> without looking like it's been marked up with tags or formatting instructions._
+>
+> — John Gruber
+
+### "Rich Text Markdown"?
+
+A terrible idea. Rich text and WYSIWYG editors are easy to read but not easy to edit. More importantly, they betray Markdown's fundamental purpose: keeping structure visible and independent of style.
+
+## Designing Mak
+
+> _Empty your mind, be formless. Shapeless, like water. If you put water into a cup, it becomes the cup.
+> You put water into a bottle and it becomes the bottle. You put it in a teapot, it becomes the teapot.
+> Now, water can flow or it can crash. Be water, my friend._
+>
+> — Bruce Lee
+
+Understanding a problem and solving a problem are completely different things.
+
+The goal of Mak is to fully use the power of Markdown. But there are already hundreds of Markdown editors on the internet. So the question becomes: why another one?
+
+> _It's very easy to be different, but very difficult to be better._
+>
+> — Jonathan Ive
+
+Design is looking for the right balance. I saw so many different ideas across different editors. Rather than asking _how_ to add all the functionality I wanted, I kept asking _why_. In _The Shape of Design_, Frank Chimero writes:
+
+> _The relationship between form and purpose—How and Why—is symbiotic. But despite this link, Why is usually
+> neglected, because How is more easily framed. It is easier to recognize failures of technique than those of
+> strategy or purpose, and simpler to ask "How do I paint this tree?" than to answer "Why does this painting
+> need a tree in it?" The How question is about a task, while the Why question regards the objective of the
+> work. If an artist or designer understands the objective, he can move in the right direction, even if there
+> are missteps along the way. But if those objectives are left unaddressed, he may find himself chasing his
+> own tail, even if the craft of the final work is extraordinary._
+>
+> — Frank Chimero, _The Shape of Design_<Footnote name="shape-of-design"/>
+
+Adding features is easy. Design is solving a meta problem.
+
+### Less and More
+
+> _It doesn't work because the buttons and the controls can't change. They can't change for each application,
+> and they can't change down the road if you think of another great idea you wanna add to this product._
+>
+> _Well, how do you solve this? Hmm. It turns out, we have solved it! We solved it in computers 20 years ago.
+> We solved it with a bit-mapped screen that could display anything we want. Put any user interface up. And a
+> pointing device. We solved it with the mouse. Right?_
+>
+> — Steve Jobs on revealing the original iPhone, 2007
+
+<Figure src="/static/idea-of-mak/iphone.jpg" alt="iPhone Revealing" caption={
+  <span>Steve Jobs revealing the original iPhone in 2007</span>
+}/>
+
+<Figure src="/static/idea-of-mak/word.png" alt="Word 97" caption={
+  <span>Word 97</span>
+}/>
+
+Complex word-processing software with hundreds of buttons and three-level-deep menus, 80% of which users never touch. Yes, they might all be necessary. But it's an interesting trade-off.
+
+What I've learned from elegant software: a button should hide away if most users don't always need it—like it never existed. But it could be found intuitively for users who _really_ do need it, and should work intuitively. That level of abstraction can both hide things away and enable the possibility of extending further.
+
+Like iPhone, Vim is another great example. For basic text editing, it's just a lightweight terminal notepad. For advanced editing, it can be extended endlessly with scripts and plugins. For power users, Vim can be far more efficient than almost any other editor.
+
+Abstraction is the explanation of "less is more." Simplicity is the result.
+
+## Mak
+
+The ideas of content-focus, Markdown, abstraction, and power shape Mak's design. They lead consistently to many other functionalities and features—ones that are easy to understand once you know the principles, and that don't need to be explained here.
+
+<Figure src="/static/idea-of-mak/mak.png" alt="Mak" style={{ transform: 'translate(-9.3%, 8%)' }} caption={
+  <span>A piece of paper.</span>
+}/>
+
+<A href="/mak" push>Enjoy!</A>
+
+<hr className="footnote"/>
+<Footnote source name="first-mak-commit" content={<A href="https://github.com/shuding/mak-old/commit/5478f0f4ffbe5a287a130b79c8083cba9677684a">First commit in the old Mak repository</A>} />
+<Footnote source name="comparison-of-text-editors" content={<A href="https://en.wikipedia.org/wiki/Comparison_of_text_editors">Comparison of text editors</A>}/>
+<Footnote source name="daringfireball" content={<A href="https://daringfireball.net/projects/markdown/">Markdown</A>} />
+<Footnote source name="shape-of-design" content={<A href="https://shapeofdesignbook.com">The Shape of Design</A>}/>
+<Footnote source name="spectrum-of-abstraction" content={<A href="https://www.youtube.com/watch?v=mVVNJKv9esE">On the Spectrum of Abstraction</A>}/>
