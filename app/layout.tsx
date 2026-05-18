@@ -15,18 +15,21 @@ const sans = localFont({
   src: './_fonts/InterVariable.woff2',
   preload: true,
   variable: '--sans',
+  display: 'block',
 })
 
 const serif = localFont({
   src: './_fonts/LoraItalicVariable.woff2',
   preload: true,
   variable: '--serif',
+  display: 'block',
 })
 
 const mono = localFont({
   src: './_fonts/IosevkaFixedCurly-ExtendedMedium.woff2',
   preload: true,
   variable: '--mono',
+  display: 'block',
 })
 
 export const metadata: Metadata = {
@@ -49,11 +52,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en' className='overflow-x-hidden touch-manipulation'>
-      <style>{`:root {
+      <head>
+        <style>{`:root {
   --sans: ${sans.style.fontFamily};
   --serif: ${serif.style.fontFamily};
   --mono: ${mono.style.fontFamily};
 }`}</style>
+      </head>
       <body
         className={cn(
           sans.variable,

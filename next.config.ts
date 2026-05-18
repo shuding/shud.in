@@ -23,5 +23,8 @@ export default withMDX()({
   images: {
     contentDispositionType: 'inline',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      new URL('https://wtw3stpubzkzkxjf.public.blob.vercel-storage.com/**'),
+    ],
   },
 } satisfies NextConfig)
