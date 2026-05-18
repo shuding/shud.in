@@ -21,7 +21,7 @@ function Item(props: React.ComponentProps<typeof Link>) {
           ? 'text-rurikon-800'
           : 'text-rurikon-300 hover:text-rurikon-600',
         'transition-colors hover:transform-none',
-        '-mx-2'
+        '-mx-2',
       )}
     >
       <Link
@@ -44,6 +44,7 @@ export default function Navbar() {
         <Item href='/thoughts'>Thoughts</Item>
         {/* <Item href='/visuals'>Visuals</Item> */}
         <Item href='/projects'>Projects</Item>
+        <Item href='/images'>Images</Item>
         {/* <Item href='/guestbook'>Guestbook</Item> */}
       </ul>
     </nav>
