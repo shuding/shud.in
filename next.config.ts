@@ -6,6 +6,26 @@ export default withMDX()({
   turbopack: {},
   redirects: async () => [
     {
+      source: '/thoughts/enlightment',
+      destination: '/thoughts/enlightenment',
+      permanent: true,
+    },
+    {
+      source: '/thoughts/enlightment-2',
+      destination: '/thoughts/enlightenment-2',
+      permanent: true,
+    },
+    {
+      source: '/posts/enlightment',
+      destination: '/thoughts/enlightenment',
+      permanent: true,
+    },
+    {
+      source: '/posts/enlightment-2',
+      destination: '/thoughts/enlightenment-2',
+      permanent: true,
+    },
+    {
       source: '/posts/:slug',
       destination: '/thoughts/:slug',
       permanent: false,
