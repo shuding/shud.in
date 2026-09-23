@@ -1,0 +1,96 @@
+export const metadata = {
+  title: 'Metaphors',
+  date: '2026.09.23',
+  description: 'A metaphor is a function between two worlds. Every good one forgets something on purpose.',
+}
+
+# Metaphors
+
+> Mathematics is the art of giving the same name to different things.  
+> — Henri Poincaré
+
+A metaphor is a function. It takes something from one world and maps it onto another. A bad metaphor only maps the surface. A good one keeps the *structure*: relationships on one side still hold on the other. So you can reason in the world you know and bring the answers back to the world you don’t. Here are a few metaphors I keep coming back to.
+
+## 1. Protocols Turn <InlineMath math="\times" /> Into <InlineMath math="+" />
+
+Say you have <InlineMath math="n" /> editors and <InlineMath math="n" /> programming languages. If every editor supports every language on its own, that’s <InlineMath math="n \times n" /> integrations, each one written, maintained, and broken separately. Then the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) comes along. Each editor speaks LSP once, and each language implements it once. Now it’s <InlineMath math="n + n" />.
+
+The same pattern is everywhere: USB, HTTP, TCP/IP, and more recently [MCP](https://modelcontextprotocol.io) between models and tools. Everyone agrees on one shared shape, and the payoff grows with <InlineMath math="n" />. That’s why protocols win even when they’re worse than a custom integration in any single case.
+
+A metaphor is a protocol too. Explaining every field to every other field directly, physics to biology, biology to economics, economics to software, is <InlineMath math="n \times n" />. It’s much cheaper to map each one onto a small set of shared structures and let everyone meet there.
+
+More and more, that shared structure is the *program*. A pendulum, a cell, a market: each can be written as code, and once they are, they can talk to each other. And programs are math. Under the [Curry–Howard correspondence](https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence), a type is a proposition and a program is its proof. In [Lean](https://lean-lang.org), mathematicians now write theorems as programs and let the type checker referee them. Poincaré’s “same name” is, more and more often, a function name.
+
+## 2. Dimensional Analysis Is Type Checking for the World Program
+
+You can’t add meters to seconds. <InlineMath math="3\,\text{m} + 2\,\text{s}" /> isn’t *wrong* the way a miscalculation is wrong. It’s wrong the way `"hello" - 1` is wrong: it doesn’t type check. Physicists check units before numbers, the same way we run the type checker before the program. And like types, units sometimes tell you the answer.
+
+A pendulum’s period <InlineMath math="T" /> (a time) could depend on its length <InlineMath math="L" />, gravity <InlineMath math="g" /> (length per time squared), and its mass <InlineMath math="m" />. Only one combination produces a time:
+
+<BlockMath math="T \propto \sqrt{L / g}" />
+
+Mass can’t appear, because nothing else could cancel out the kilograms. We learned some physics without doing any physics. We only matched the types. What types can’t give you is the constant. The real formula is <InlineMath math="T = 2\pi\sqrt{L/g}" />, and the <InlineMath math="2\pi" /> comes from actually solving the equation. That’s the implementation. Types shrink the space of possible programs. They don’t pick the right one.
+
+Robin Milner said “well-typed programs cannot go wrong.” The universe seems to be a well-typed program. We’re still reverse-engineering the type signatures.
+
+## 3. If You Enjoy In-Person Communication, You Should Enjoy SSR
+
+Here’s a client-side rendered conversation:
+
+> **9:02** hey  
+> **11:47** hi!  
+> **11:48** do you have a minute?  
+> **14:15** sure, what’s up  
+> **14:16** so about the migration...  
+> **17:30** which one?
+
+Every message is a round trip, and each one waits on the other person’s latency. Across time zones, five round trips take two days. It’s a [waterfall](/thoughts/performance-is-not-a-technical-problem): each request starts only after the previous one resolves, because the client didn’t have enough context to ask for everything at once.
+
+An in-person conversation is server-side rendered. The other person sits right next to the data: their own knowledge, the whiteboard, the code on their screen. You ask once and get a fully formed answer, with the follow-ups already resolved.
+
+It even [streams](/thoughts/ssr-streaming-and-css-in-js). People start talking before they finish thinking. They send the shell first (“so there are two parts to this...”) and fill in the slow parts later (“let me get back to you on the second one”). That’s Suspense. So if you love in-person meetings because they’re “just faster,” you already get the argument for SSR: **put computation close to the data, and cut down round trips.**
+
+It works the other way too. Remote work doesn’t have to be client-side rendered. [Don’t just say hello](https://nohello.net). Send the complete message: the context, the question, what you’ve already tried. That’s sending HTML instead of an empty `<div id="root">`. And like the web, it isn’t all or nothing. Hydrate the parts that really need back-and-forth, and render the rest up front.
+
+## 4. The Limits of My Language
+
+> The limits of my language mean the limits of my world.  
+> — Ludwig Wittgenstein
+
+Wittgenstein meant this about people. Today it describes a creature that actually exists: a large language model. Its world is *literally* language. It has never touched a cup or felt a pendulum swing. Everything it knows comes through text, a metaphor of the world written down by us.
+
+Turing saw this coming, in a way. When he asked “Can machines think?”, he didn’t define thinking. He swapped it for a conversation: if you can’t tell the machine apart from a person through language alone, then as far as you can know, it thinks. The Turing test is Wittgenstein’s line turned into a benchmark. Machines now pass that test more often than not. So the sharper question is: is language enough?
+
+One answer is yes: a mind that has all of language has all of the world that can be spoken about. The other answer is that language is a map, a lossy metaphor for the territory. [The reality we can put into words is never reality itself.](/thoughts/enlightenment-2) A model trained only on the map can know it better than anyone alive, and still not know what the map is *of*.
+
+I don’t know which answer is right. But the Wittgenstein who wrote the *Tractatus* later changed his mind. In the *Philosophical Investigations*, meaning isn’t a picture of the world. Meaning is *use*: words mean what they do in the games we play with them. By that standard, what matters about AGI isn’t how much language it has absorbed. It’s whether it takes part in the game.
+
+## 5. Intuition Is a Cache
+
+Intuition is the result of a computation you did long ago, stored so you never have to do it again. An expert glances at a diff, a chessboard, a patient, and just knows. Not because they think faster, but because they aren’t thinking at all. It’s a cache hit. A beginner has a cold cache: every decision goes all the way to origin.
+
+Caches are fast, and they are usually right. That’s what makes them dangerous. When the world changes and the cache doesn’t, you get a stale read: an answer delivered with the full confidence of a hit and the accuracy of five years ago. The most experienced person in the room is also the one holding the most cached answers.
+
+There’s a subtler failure: the wrong cache key. If intuition is keyed on surface features, two situations that merely look alike hit the same entry. That’s also a fair definition of a bad metaphor.
+
+The web has a pattern for living with this: `stale-while-revalidate`. Serve the cached answer right away, and check it again in the background. It’s a good way to hold beliefs, too. Trust your gut, act fast, then verify. And give strong opinions a TTL.
+
+## 6. There Is No Now
+
+In 1905, Einstein asked a question that sounds like it has an obvious answer: what does it mean for two things to happen at the same time? Lightning strikes here, and a mile away. Were they simultaneous? It depends on who’s asking. Nothing travels faster than light, so you can’t compare two distant clocks without sending a signal, and the signal takes time. Observers moving differently will disagree about which strike came first. There is no universal now.
+
+Seventy years later, Leslie Lamport noticed that computers have the same problem. A cluster of servers has no shared clock. Messages take time to arrive, the way light does, so timestamps from two machines can’t be trusted to order anything.
+
+What survives, in both worlds, is causality. If one event could have sent a signal to another, every observer agrees on their order. In physics that’s the light cone. In Lamport’s 1978 paper it’s the *happened-before* relation, drawn on what he called a space-time diagram. Events outside each other’s cones are *concurrent*: neither could have affected the other, and “which came first?” has no answer. A Lamport clock doesn’t pretend to know the time. It only tracks what could have caused what.
+
+Even the workarounds rhyme. Einstein defined simultaneity by bouncing a light signal between two clocks and assuming it took equally long each way. Poincaré, from the epigraph, got there a few years earlier: working with the French Bureau of Longitude, he wrote about synchronizing distant clocks by telegraph, correcting for the time the signal spent on the wire. NTP synchronizes your laptop the same way today. Google’s Spanner goes further: it treats time as an interval of uncertainty and waits it out before committing, like a light cone with a width you can measure.
+
+Wherever signals take time, now is local. If you’ve ever worked across time zones, you already knew that.
+
+## Coda
+
+A metaphor is a function between two worlds. A good one is a protocol: many ideas meet in one place. It type checks. It moves thinking closer to where understanding already is. It shapes, and limits, what we can say. It gets cached, and one day it goes stale. And sometimes it isn’t a metaphor at all, just the same problem showing up twice, once in spacetime and once in a data center.
+
+Borges wrote about [Ireneo Funes](https://en.wikipedia.org/wiki/Funes_the_Memorious), a young man who, after being thrown from a horse, could no longer forget anything. Every leaf on every tree, every time he had seen it. It bothered him “that the dog at three fourteen (seen from the side) should have the same name as the dog at three fifteen (seen from the front).” Funes, Borges tells us, was not very capable of thought: “To think is to forget differences, generalize, make abstractions.”
+
+That is Poincaré’s sentence, seen from the other side. Every metaphor forgets something. That’s what makes it useful, and it’s also exactly where it breaks. The art is choosing what to forget, and remembering that you did.
