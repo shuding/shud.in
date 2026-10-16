@@ -23,6 +23,7 @@ function Item(props: React.ComponentProps<typeof Link>) {
         'transition-colors hover:transform-none',
         '-mx-2',
       )}
+      dir='rtl'
     >
       <Link
         {...props}
@@ -42,10 +43,8 @@ export default function Navbar() {
       <ul className='lowercase text-right mobile:sticky top-6 sm:top-10 md:top-14 mb-6 mobile:mb-0 flex gap-2 justify-end mobile:block'>
         <Item href='/'>About</Item>
         <Item href='/thoughts'>Thoughts</Item>
-        {/* <Item href='/visuals'>Visuals</Item> */}
         <Item href='/projects'>Projects</Item>
-        <Item href='/images'>Images</Item>
-        {/* <Item href='/guestbook'>Guestbook</Item> */}
+        <Item href='/guestbook'>Guestbook</Item>
       </ul>
     </nav>
   )

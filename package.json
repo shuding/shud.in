@@ -18,7 +18,9 @@
     "@shikijs/twoslash": "^3.22.0",
     "@tailwindcss/postcss": "4.0.15",
     "@types/mdx": "^2.0.12",
+    "@upstash/redis": "^1.39.0",
     "@vercel/analytics": "^1.5.0",
+    "@vercel/firewall": "^1.2.6",
     "clsx": "^2.1.0",
     "codice": "^1.5.5",
     "katex": "^0.16.11",
@@ -28,6 +30,7 @@
     "react-dom": "19.2.8",
     "react-katex": "^3.0.1",
     "remark-gfm": "^4.0.0",
+    "resend": "^6.33.0",
     "sharp": "^0.33.4",
     "shiki": "^3.2.1"
   },

@@ -208,6 +208,10 @@ code span {
   transition: color 0.2s;
 }
 
+input, textarea {
+  corner-shape: squircle;
+}
+
 article {
   figure {
     margin-top: 1.75rem;

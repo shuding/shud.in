@@ -3,8 +3,15 @@ import { NextConfig } from 'next'
 
 export default withMDX()({
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
+  // Don't generate AGENTS.md / CLAUDE.md when an agent runs `next dev`.
+  agentRules: false,
   turbopack: {},
   redirects: async () => [
+    {
+      source: '/images',
+      destination: '/thoughts/images',
+      permanent: true,
+    },
     {
       source: '/thoughts/enlightment',
       destination: '/thoughts/enlightenment',
