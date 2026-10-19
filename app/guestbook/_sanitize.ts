@@ -15,11 +15,15 @@ function clean(text: string) {
     .replace(INVISIBLE, '')
 }
 
+// Remove blank (or whitespace-only) lines, keeping single line breaks.
+export function collapseBlankLines(text: string) {
+  return text.replace(/\n(?:[^\S\n]*\n)+/g, '\n')
+}
+
 export function cleanMessage(text: string) {
-  return clean(text)
-    .replace(/[^\S\n]+$/gm, '') // trailing spaces on each line
-    .replace(/\n{3,}/g, '\n\n') // at most one blank line in a row
-    .trim()
+  return collapseBlankLines(
+    clean(text).replace(/[^\S\n]+$/gm, ''), // trailing spaces on each line
+  ).trim()
 }
 
 export function cleanSingleLine(text: string) {

@@ -10,6 +10,8 @@
 import { randomUUID } from 'node:crypto'
 import { Redis } from '@upstash/redis'
 
+import { collapseBlankLines } from './_sanitize'
+
 const KEY = 'guestbook'
 
 export type GuestbookEntry = {
@@ -63,7 +65,8 @@ export async function getEntries(): Promise<GuestbookEntry[]> {
       id,
       // Entries can be hand-edited in Redis: only render a name that is text.
       name: typeof value.name === 'string' && value.name ? value.name : null,
-      message: value.message,
+      // Older entries may contain blank lines; never display them.
+      message: collapseBlankLines(value.message),
       createdAt: value.createdAt,
     })
   }
