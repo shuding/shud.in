@@ -139,6 +139,8 @@ pre {
   /* contain: paint; */
   /* margin: 1.75rem 0; */
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rurikon-100) transparent;
   /* border-radius: 0.75rem; */
   /* background-color: var(--color-rurikon-50); */
   padding: 0.875rem 1.25rem;
@@ -197,10 +199,20 @@ code {
     width: calc(100% + 2.5rem);
     display: inline-block;
   }
+  /* A highlighted word can span several adjacent tokens. Only pad the outer
+     edges of each run, so the translucent backgrounds never overlap. */
   .highlighted-word {
     background-color: lab(97 -16.78 110.24 / 0.23);
-    padding: 2px;
-    margin: -2px;
+    padding: 2px 0;
+    margin: -2px 0;
+  }
+  .highlighted-word:not(.highlighted-word + .highlighted-word) {
+    padding-left: 2px;
+    margin-left: -2px;
+  }
+  .highlighted-word:not(:has(+ .highlighted-word)) {
+    padding-right: 2px;
+    margin-right: -2px;
   }
 }
 

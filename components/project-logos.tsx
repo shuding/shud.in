@@ -1,11 +1,24 @@
-import {
-  ArrowsRightLeftIcon,
-  Bars3BottomLeftIcon,
-  CodeBracketIcon,
-  GlobeAsiaAustraliaIcon,
-  SwatchIcon,
-  SparklesIcon,
-} from '@heroicons/react/16/solid'
+// 16×16 icon for logos rendered as icon + title.
+function Icon({
+  height,
+  children,
+}: {
+  height: number
+  children: React.ReactNode
+}) {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      viewBox='0 0 16 16'
+      height={height}
+      width={height}
+      fill='currentColor'
+      aria-hidden
+    >
+      {children}
+    </svg>
+  )
+}
 
 export function Nextjs({ height = 24 }) {
   return (
@@ -112,47 +125,150 @@ function LogoWithIcon({
 
 export function AISDK({ height = 24 }) {
   return (
-    <LogoWithIcon
-      icon={<SparklesIcon height={height} />}
-      title='Vercel AI SDK'
-    />
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      viewBox='0 0 146 40'
+      height={height}
+      xlinkTitle='AI SDK'
+      className='inline text-black'
+    >
+      <path
+        fill='currentColor'
+        d='M37.8 40h-7.66l-3.32-9.46H10.99L7.66 40H0L14.42 0h8.96zM61.57 6.37h-6.43v27.26h6.76V40H41v-6.37h6.82V6.37h-6.48V0h20.23zM125.7 0a20 20 0 0 1 0 40H88.56a20 20 0 1 1 0-40zM88.56 4.29a15.72 15.72 0 1 0 0 31.43h37.15a15.72 15.72 0 0 0 0-31.43zm.54 5.7c4.28 0 7.2 2.64 7.67 6.51l-4.12.22a3.5 3.5 0 0 0-3.66-3.3c-1.79 0-3.06.91-2.98 2.32.05 1.63 1.95 2.17 4 2.68 4.32.95 7.05 2.8 7.05 5.86 0 3.66-3.22 5.72-7.37 5.72-4.68 0-8-2.6-8.26-6.67l4.14-.19c.36 2.06 1.82 3.41 4.23 3.41 1.84 0 3.1-.73 3.06-2.14-.02-1.4-1.22-2.22-4.22-2.95-4.18-1-6.86-2.68-6.86-5.77 0-3.5 2.93-5.7 7.32-5.7m16.88.44c6.24 0 9.73 3.47 9.73 9.65 0 6.15-3.44 9.6-9.56 9.6h-6.8V10.42zm16.08 8.4 7-8.4h4.8l-7.08 8.48 7.5 10.76h-4.68l-5.53-8-2 2.34v5.66h-4.31V10.43h4.3zm-18.6 7.37h2.52c3.74 0 5.53-1.98 5.53-6.15s-1.79-6.15-5.53-6.15h-2.52zm-90.33-1.92h11.55l-5.75-16.9z'
+      />
+    </svg>
   )
 }
 
+// A globe with a label pointing at it, like COBE's markers.
 export function COBE({ height = 24 }) {
   return (
     <LogoWithIcon
-      icon={<GlobeAsiaAustraliaIcon height={height} />}
+      icon={
+        <Icon height={height}>
+          <circle
+            cx='8'
+            cy='8'
+            r='5'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+          />
+        </Icon>
+      }
       title='COBE'
     />
   )
 }
 
+// Two equal lines balanced on a fulcrum.
 export function ReactWrapBalancer({ height = 24 }) {
   return (
     <LogoWithIcon
-      icon={<Bars3BottomLeftIcon height={height} />}
+      icon={
+        <Icon height={height}>
+          <rect x='1.5' y='2.25' width='5.5' height='2.5' rx='1.25' />
+          <rect x='9' y='2.25' width='5.5' height='2.5' rx='1.25' />
+          <rect x='1' y='6.25' width='14' height='1.5' rx='.75' />
+          <path d='M7.13 7.75h1.74l2.46 4.86a.75.75 0 0 1-.67 1.09H5.34a.75.75 0 0 1-.67-1.09z' />
+        </Icon>
+      }
       title='React Wrap Balancer'
     />
   )
 }
 
+// A vector curve with anchors and handles: CSS rendered to SVG.
 export function Satori({ height = 24 }) {
   return (
-    <LogoWithIcon icon={<CodeBracketIcon height={height} />} title='Satori' />
+    <LogoWithIcon
+      icon={
+        <Icon height={height}>
+          <path
+            d='M3 13C4 6 12 10 13 3'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+          />
+          <path
+            d='M3 13 3 5.5M13 3l0 7.5'
+            fill='none'
+            stroke='currentColor'
+            opacity='0.5'
+          />
+          <circle cx='3' cy='5.5' r='1.25' />
+          <circle cx='13' cy='10.5' r='1.25' />
+          <rect x='1.5' y='11.5' width='3' height='3' rx='.5' />
+          <rect x='11.5' y='1.5' width='3' height='3' rx='.5' />
+        </Icon>
+      }
+      title='Satori'
+    />
   )
 }
 
+// Rows of highlighted tokens, filling a square.
 export function GPULexer({ height = 24 }) {
   return (
-    <LogoWithIcon icon={<SwatchIcon height={height} />} title='GPU Lexer' />
+    <LogoWithIcon
+      icon={
+        <Icon height={height}>
+          <rect x='1' y='1' width='4' height='2.5' rx='1.25' />
+          <rect x='6' y='1' width='9' height='2.5' rx='1.25' opacity='.35' />
+          <rect
+            x='1'
+            y='4.833'
+            width='2.5'
+            height='2.5'
+            rx='1.25'
+            opacity='.35'
+          />
+          <rect x='4.5' y='4.833' width='6' height='2.5' rx='1.25' />
+          <rect
+            x='11.5'
+            y='4.833'
+            width='3.5'
+            height='2.5'
+            rx='1.25'
+            opacity='.35'
+          />
+          <rect x='1' y='8.667' width='7' height='2.5' rx='1.25' />
+          <rect
+            x='9'
+            y='8.667'
+            width='6'
+            height='2.5'
+            rx='1.25'
+            opacity='.35'
+          />
+          <rect x='1' y='12.5' width='3' height='2.5' rx='1.25' opacity='.35' />
+          <rect x='5' y='12.5' width='4.5' height='2.5' rx='1.25' />
+          <rect
+            x='10.5'
+            y='12.5'
+            width='4.5'
+            height='2.5'
+            rx='1.25'
+            opacity='.35'
+          />
+        </Icon>
+      }
+      title='GPU Lexer'
+    />
   )
 }
 
+// One page crossfading into another.
 export function NextViewTransitions({ height = 24 }) {
   return (
     <LogoWithIcon
-      icon={<ArrowsRightLeftIcon height={height} />}
+      icon={
+        <Icon height={height}>
+          <path d='M3 1h5a2 2 0 0 1 2 2v2H8a3 3 0 0 0-3 3v2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z' />
+          <rect x='6' y='6' width='9' height='9' rx='2' />
+        </Icon>
+      }
       title='Next View Transitions'
     />
   )
