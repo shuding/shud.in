@@ -2,12 +2,12 @@ export const metadata = {
   title: 'Ideas Behind GPU Lexer',
   date: '2026.10.22',
   description: 'A 28kB model that highlights code in any language, and the ideas that led to it.',
-  draft: true,
 }
 
 import { components } from '@/mdx-components'
 import imageSegmentationExample from '@/assets/images/image-segmentation-example.jpg'
 import { ImpossibleDimensions } from './impossible-dimensions'
+import { CodePixels } from './code-pixels'
 
 # Ideas Behind GPU Lexer
 
@@ -75,9 +75,11 @@ That question already has an answer in another field: **image segmentation**. A 
 
 Highlighting is the same problem, minus one dimension. Split a piece of code into its smallest parts (words, symbols, spaces) and treat each one as a pixel. Now the source is a 1D image, and highlighting means labeling every pixel as keyword, string, comment and so on. A 2D problem that models have already solved becomes a 1D problem that should be easier.
 
-The analogy also tells you what the model needs. Labeling a pixel takes its neighbors (_is this word followed by `=`_) and the whole picture (_are we inside a string that opened 200 parts ago_). gpu-lexer works the same way. Context flows up a tree to summarize the file, flows back down, and then every part is labeled in parallel on the GPU.
+<BlockSideTitle title='Each part becomes one pixel, and each pixel gets a class. Gray is plain text, including the spaces.'>
+  <CodePixels />
+</BlockSideTitle>
 
-{/* TODO: maybe a small diagram: code → parts → “pixels” → labels */}
+The analogy also tells you what the model needs. Labeling a pixel takes its neighbors (_is this word followed by `=`_) and the whole picture (_are we inside a string that opened 200 parts ago_). gpu-lexer works the same way. Context flows up a tree to summarize the file, flows back down, and then every part is labeled in parallel on the GPU.
 
 There’s no grammar anywhere in that pipeline. What the model learns are shapes that cross language boundaries, which is why it does reasonably well on languages it never saw in training.
 
