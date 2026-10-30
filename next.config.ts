@@ -44,6 +44,7 @@ export default withMDX()({
     },
     turbopackFileSystemCacheForDev: true,
     turbopackFileSystemCacheForBuild: true,
+    agentUpgrade: 'security',
   },
   transpilePackages: ['shiki'],
   serverExternalPackages: ['@shikijs/twoslash'],

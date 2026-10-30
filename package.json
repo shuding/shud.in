@@ -11,7 +11,7 @@
   "dependencies": {
     "@mdx-js/loader": "^3.0.1",
     "@mdx-js/react": "^3.0.1",
-    "@next/mdx": "^16.4.0",
+    "@next/mdx": "^16.4.3",
     "@shikijs/rehype": "^3.2.1",
     "@shikijs/transformers": "^3.22.0",
     "@shikijs/twoslash": "^3.22.0",
@@ -23,7 +23,7 @@
     "clsx": "^2.1.0",
     "codice": "^1.5.5",
     "katex": "^0.16.11",
-    "next": "16.4.0",
+    "next": "16.4.3",
     "quickjs-emscripten": "^0.31.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
