@@ -1,6 +1,10 @@
-import { promises as fs } from 'fs'
-import path from 'path'
 import cn from 'clsx'
+
+import { getArticleParams } from './params'
+
+// Every article is prerendered; anything else is a 404, so posts never render
+// at request time.
+export const dynamicParams = false
 
 export default async function Page(props: {
   params: Promise<{
@@ -22,18 +26,8 @@ export default async function Page(props: {
   )
 }
 
-export async function generateStaticParams() {
-  const articles = await fs.readdir(
-    path.join(process.cwd(), 'app', 'thoughts', '_articles'),
-  )
-
-  return articles
-    .filter((name) => name.endsWith('.mdx'))
-    .map((name) => ({
-      params: {
-        slug: name.replace(/\.mdx$/, ''),
-      },
-    }))
+export function generateStaticParams() {
+  return getArticleParams()
 }
 
 export async function generateMetadata(props: {

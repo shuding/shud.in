@@ -48,6 +48,18 @@ export default withMDX()({
   },
   transpilePackages: ['shiki'],
   serverExternalPackages: ['@shikijs/twoslash'],
+  // Code blocks are highlighted at build time (every page with MDX is
+  // prerendered), so keep the highlighter out of server functions: the
+  // TypeScript compiler that Twoslash uses, and Shiki's grammars, themes and
+  // wasm. Together they're ~29 MB of each function's ~36 MB.
+  outputFileTracingExcludes: {
+    '/*': [
+      'node_modules/.pnpm/typescript@*/**',
+      '.next/server/chunks/**/*_@shikijs_langs_*',
+      '.next/server/chunks/**/*_@shikijs_themes_*',
+      '.next/server/chunks/**/*_shiki_dist_wasm_*',
+    ],
+  },
   images: {
     contentDispositionType: 'inline',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

@@ -1,11 +1,5 @@
 import type { MDXComponents } from 'mdx/types'
 import type { ReactNode } from 'react'
-import { codeToHtml, createCssVariablesTheme } from 'shiki'
-import { rendererRich, transformerTwoslash } from '@shikijs/twoslash'
-import {
-  transformerNotationHighlight,
-  transformerNotationWordHighlight,
-} from '@shikijs/transformers'
 
 import Link from 'next/link'
 import Image from 'next/image'
@@ -16,8 +10,6 @@ import { InlineMath, BlockMath } from 'react-katex'
 import { Card } from '@/components/tweet-card'
 import { BlockSideTitle } from '@/components/block-sidetitle'
 import { DoubleSlitPlayground } from '@/app/thoughts/_articles/double-slit-playground'
-
-const cssVariablesTheme = createCssVariablesTheme({})
 
 export const components: Record<
   string,
@@ -132,9 +124,23 @@ export const components: Record<
         }
       }
 
+      // Load the highlighter only when a code block renders (and Twoslash,
+      // which pulls in the TypeScript compiler, only when one asks for it).
+      // Code is highlighted at build time, so server functions ship without
+      // these; see `outputFileTracingExcludes` in next.config.ts.
+      const [
+        { codeToHtml, createCssVariablesTheme },
+        { transformerNotationHighlight, transformerNotationWordHighlight },
+        twoslash,
+      ] = await Promise.all([
+        import('shiki'),
+        import('@shikijs/transformers'),
+        twoSlash ? import('@shikijs/twoslash') : undefined,
+      ])
+
       const code = await codeToHtml(props.children, {
         lang: lang.replace('language-', ''),
-        theme: cssVariablesTheme,
+        theme: createCssVariablesTheme({}),
         // theme: 'min-light',
         // theme: 'snazzy-light',
         transformers: [
@@ -154,9 +160,9 @@ export const components: Record<
               return html.replace(/^<code>|<\/code>$/g, '')
             },
           },
-          twoSlash
-            ? (transformerTwoslash({
-                renderer: rendererRich({
+          twoslash
+            ? (twoslash.transformerTwoslash({
+                renderer: twoslash.rendererRich({
                   errorRendering: 'hover',
                 }),
               }) as any)
