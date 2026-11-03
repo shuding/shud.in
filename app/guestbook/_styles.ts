@@ -1,7 +1,7 @@
 import cn from 'clsx'
 
 export const controlClassName = cn(
-  'rounded-sm border border-rurikon-border bg-white p-1.5 text-sm leading-5',
+  'rounded-sm border border-rurikon-border bg-white px-2 py-1.5 text-sm leading-5',
   'outline-none focus-visible:border-rurikon-200 transition-colors',
 )
 

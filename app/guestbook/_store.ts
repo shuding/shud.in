@@ -70,8 +70,8 @@ export async function getEntries(): Promise<GuestbookEntry[]> {
       createdAt: value.createdAt,
     })
   }
-  // Oldest first: the form is below the list, so new entries land next to it.
-  return entries.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  // Newest first.
+  return entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
 // Server-only: includes `email`. Used by the manage page behind a signed link.

@@ -23,12 +23,9 @@ export function Guestbook({ entries }: { entries: GuestbookEntry[] }) {
               <p className='whitespace-pre-wrap break-words text-rurikon-600'>
                 {entry.message}
               </p>
-              <p className='text-sm text-rurikon-300'>
+              <p className='text-rurikon-300 font-serif'>
                 {entry.name ? <span>{entry.name}, </span> : null}
-                <time
-                  dateTime={entry.createdAt}
-                  className='tabular-nums tracking-tighter'
-                >
+                <time dateTime={entry.createdAt} className=''>
                   {formatDate(entry.createdAt)}
                 </time>
               </p>
@@ -49,7 +46,7 @@ export function Guestbook({ entries }: { entries: GuestbookEntry[] }) {
           required
           maxLength={500}
           rows={3}
-          placeholder='Leave a message to me…'
+          placeholder='Leave a message…'
           defaultValue={values?.message}
           className={cn(
             inputClassName,
@@ -106,11 +103,7 @@ export function Guestbook({ entries }: { entries: GuestbookEntry[] }) {
                 ? 'Thanks!'
                 : 'Your email is only visible to me.'}
           </p>
-          <button
-            type='submit'
-            disabled={pending}
-            className={buttonClassName}
-          >
+          <button type='submit' disabled={pending} className={buttonClassName}>
             {pending ? 'Sending…' : 'Send'}
           </button>
         </div>
