@@ -9,7 +9,6 @@ import { InlineMath, BlockMath } from 'react-katex'
 
 import { Card } from '@/components/tweet-card'
 import { BlockSideTitle } from '@/components/block-sidetitle'
-import { DoubleSlitPlayground } from '@/app/thoughts/_articles/double-slit-playground'
 
 export const components: Record<
   string,
@@ -222,7 +221,6 @@ export const components: Record<
   BlockSideTitle,
   InlineMath,
   BlockMath,
-  DoubleSlitPlayground,
 }
 
 export function useMDXComponents(inherited: MDXComponents): MDXComponents {
