@@ -104,11 +104,16 @@ export const components: Record<
   },
   strong: (props) => <strong className='font-bold' {...props} />,
   p: (props) => <p className='mt-7' {...props} />,
+  // The wrapper gives back the space that `text-box` trims off the quote, so
+  // the text stays on the grid while the rule hugs it. See `.quote` in
+  // globals.css.
   blockquote: (props) => (
-    <blockquote
-      className='pl-6 -ml-6 sm:pl-10 sm:-ml-10 md:pl-14 md:-ml-14 not-mobile:text-rurikon-400'
-      {...props}
-    />
+    <div className='quote'>
+      <blockquote
+        className='pl-6 -ml-6 sm:pl-10 sm:-ml-10 md:pl-14 md:-ml-14 not-mobile:text-rurikon-400'
+        {...props}
+      />
+    </div>
   ),
   pre: (props) => (
     <pre className='mt-7 whitespace-pre md:whitespace-pre-wrap' {...props} />

@@ -124,8 +124,62 @@ blockquote {
   }
 }
 
-blockquote + blockquote {
+/* Consecutive quotes share one continuous rule. */
+.quote + .quote > blockquote {
   display: flow-root;
+}
+
+/* Trim quotes to cap height and baseline so the rule hugs the text, and give
+   the trimmed space back as padding on the wrapper so the text stays on the
+   1.75rem grid. Lora Italic has ascent 1.006em, descent 0.274em and cap
+   height 0.7em (constants, since `cap` here would measure the wrapper's sans
+   font):
+     top:    top half-leading + ascent - cap height
+     bottom: 1lh - cap height - top
+   The total is exact, so content after a quote stays on the grid. The split
+   follows Chrome, which rounds ascent and descent to device pixels and gives
+   the odd pixel of leading to the bottom; rounding to 0.5px matches 2x and 3x
+   screens.
+   The wrapper's padding stops margins collapsing through it, so it takes over
+   the first child's `mt-7`. CJK glyphs rise above the cap height, so Chinese
+   posts stay untrimmed. */
+@supports (text-box: trim-both cap alphabetic) {
+  .quote:not(:lang(zh)) {
+    --ascent: round(1.006em, 0.5px);
+    --descent: round(0.274em, 0.5px);
+    --trim-top: calc(
+      round(down, (1lh - var(--ascent) - var(--descent)) / 2, 0.5px) +
+        var(--ascent) - 0.7em
+    );
+    margin-top: 1.75rem;
+    padding-block: var(--trim-top) calc(1lh - 0.7em - var(--trim-top));
+
+    > blockquote {
+      text-box: trim-both cap alphabetic;
+    }
+    > blockquote > :first-child {
+      margin-top: 0;
+    }
+
+    /* Consecutive quotes don't trim the edges they share. */
+    &:has(+ .quote) {
+      padding-bottom: 0;
+      > blockquote {
+        text-box-trim: trim-start;
+      }
+    }
+    & + .quote {
+      margin-top: 0;
+      padding-top: 0;
+      > blockquote {
+        padding-top: 1.75rem;
+        text-box-trim: trim-end;
+      }
+    }
+    & + .quote:has(+ .quote) > blockquote {
+      text-box-trim: none;
+    }
+  }
 }
 
 main {
@@ -257,6 +311,8 @@ article {
   }
   details summary {
     font-variation-settings: 'wght' 600, var(--sans-variation);
+  }
+  details:open summary {
     margin-bottom: 0.25rem;
   }
   details summary::marker {
