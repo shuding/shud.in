@@ -23,7 +23,7 @@
     "clsx": "^2.1.0",
     "codice": "^1.5.5",
     "katex": "^0.16.11",
-    "next": "16.4.3",
+    "next": "16.5.0-canary.40",
     "quickjs-emscripten": "^0.31.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
