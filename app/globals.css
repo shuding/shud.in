@@ -391,3 +391,17 @@ div[data-codice-editor] {
     font-feature-settings: var(--font-features);    
   }
 }
+
+/* Reading progress pill (components/reading-progress.tsx). */
+@keyframes reading-progress-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes reading-progress-fade {
+  from {
+    opacity: 0;
+  }
+}
