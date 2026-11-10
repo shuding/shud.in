@@ -391,3 +391,16 @@ div[data-codice-editor] {
     font-feature-settings: var(--font-features);    
   }
 }
+
+/* Reading progress label (components/reading-progress.tsx): the new value
+   settles in from just below. Skipped when reduced motion is requested. */
+@keyframes reading-progress-label {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
