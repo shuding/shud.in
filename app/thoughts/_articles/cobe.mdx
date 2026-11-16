@@ -6,11 +6,11 @@ export const metadata = {
 
 # COBE: WebGL Globe in 5kB
 
-_This blog post was originally published as a [Tweet thread](https://twitter.com/shuding/status/1475916082875666441)._
+_This blog post was originally published as a [Tweet thread](https://x.com/shuding/status/1475916082875666441) in 2021. COBE has since reached [v2](#cobe-v2)._
 
-<Card title="COBE" desc="5kB WebGL globe lib." link="https://github.com/shuding/cobe" image="https://repository-images.githubusercontent.com/429536908/62a4e686-8613-4b45-b7bb-fa35b558ae8e" />
+<div className="framed no-padding">![Tweet by Shu (@shuding), Dec 28, 2021: “I made github.com/shuding/cobe a while ago: a 5kB globe lib, and it improved our page performance* by almost 60%. How is it created? Time for a WebGL & shader thread!” with a video of a dotted globe glowing on black.](cobe-tweet-thread.png)</div>
 
-I made [github.com/shuding/cobe](https://github.com/shuding/cobe) a while ago: a 5kB globe lib, and it improved our page performance by [almost 60%](https://twitter.com/shuding/status/1467087244464959490). How was it created?
+The code is at [github.com/shuding/cobe](https://github.com/shuding/cobe), and here’s [where the “almost 60%” comes from](https://twitter.com/shuding/status/1467087244464959490). So how was it created?
 
 First of all, today's popular WebGL libs are usually sized at hundreds of kilobytes, but there are also lightweight choices such as [github.com/vaneenige/phenomenon](https://github.com/vaneenige/phenomenon) and [github.com/xem/W](https://github.com/xem/W). All of them are wrappers on top of the WebGL standard APIs, but with different feature sets.
 
@@ -91,3 +91,13 @@ Finally, we can add some phong lighting and glow effect to make it look good. An
 This library now powers [vercel.com](https://vercel.com) and [vercel.com/edge](https://vercel.com/edge) :)
 
 <Card title="Develop. Preview. Ship. For the best frontend teams – Vercel" link="https://vercel.com" desc="Deploy web projects with the best frontend developer experience and highest end-user performance." image="https://assets.vercel.com/image/upload/front/vercel/dps.png" />
+
+## COBE v2
+
+Four years later, I [released COBE v2](https://x.com/shuding/status/2034352633381847145):
+
+<div className="framed no-padding">![Tweet by Shu (@shuding), Mar 18, 2026: “COBE v2 is here: markers, arcs, attach any HTML elements, Infinite ideas. cobe.vercel.app” with a video of a light dotted globe showing city markers, arcs between cities, and HTML labels.](cobe-tweet-v2.png)</div>
+
+It adds markers, arcs, and the ability to attach any HTML element to a point on the globe. That last one was a long-standing problem with WebGL globes. v2 solves it with CSS Anchor Positioning, so labels simply follow the globe as it spins, and you can style them with plain CSS.
+
+Try it at [cobe.vercel.app](https://cobe.vercel.app).
