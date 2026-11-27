@@ -2,6 +2,7 @@ export const metadata = {
   title: "COBE: WebGL Globe in 5kB",
   date: "2021.12.28",
   description: "How to build a WebGL globe with only 5kB of code.",
+  demo: "cobe",
 }
 
 # COBE: WebGL Globe in 5kB
@@ -16,7 +17,7 @@ First of all, today's popular WebGL libs are usually sized at hundreds of kiloby
 
 Earlier this year we were using a Three.js based solution. The globe is a SphereGeometry that loads the full world map JPEG as texture. Every visitor will spend ~40kB loading that image, and it still felt blurry so we couldn't optimize it further.
 
-<div className="framed no-padding">![](cobe-old.jpeg)</div>
+<div className="framed no-padding">![The previous Three.js globe: a gray sphere textured with a world map, blurry at the edges, with orange dots on cities.](cobe-old.jpeg)</div>
 
 We tried to set a higher texture anisotropy ([threejs.org/docs/#api/en/textures/Texture.anisotropy](https://threejs.org/docs/#api/en/textures/Texture.anisotropy)) which improved it a bit, but that's still a trade-off between performance and quality.
 
@@ -28,7 +29,7 @@ But one bottleneck in that GitHub approach is, they have to reduce the number of
 
 To start with that idea, let's create a shader to draw a sphere, and a 4096×2048 world map as the texture (80kB):
 
-<div className="framed no-padding">![](cobe-shader-1.png)</div>
+<div className="framed no-padding">![A black sphere drawn by a shader, with the continents in white from a world map texture.](cobe-shader-1.png)</div>
 
 ```js
 color = isOnLand(x, y) ? light : dark
@@ -36,7 +37,7 @@ color = isOnLand(x, y) ? light : dark
 
 Then we can render some kind of lattice on the globe, like this a basic one:
 
-<div className="framed no-padding">![](cobe-shader-2.png)</div>
+<div className="framed no-padding">![A black sphere covered in a regular grid of small dots, bunching up towards the north pole.](cobe-shader-2.png)</div>
 
 ```js
 color = isOnDot(x, y) ? light : dark
@@ -44,7 +45,7 @@ color = isOnDot(x, y) ? light : dark
 
 By multiplying them, you get a dotted world map:
 
-<div className="framed no-padding">![](cobe-shader-3.png)</div>
+<div className="framed no-padding">![The two combined: dots only where there's land, forming a dotted world map that's dense and uneven near the pole.](cobe-shader-3.png)</div>
 
 ```js
 color = isOnLand(x, y) && isOnDot(x, y) ? light : dark
@@ -73,9 +74,9 @@ Then I saw [shadertoy.com/view/lllXz4](https://shadertoy.com/view/lllXz4) create
 So now we finally got everything ready. The sampling looks good with the new algorithm:
 
 <div style={{display: 'flex'}}>
-![](cobe-shader-4.png)
+![A sphere covered in evenly spaced dots from a Spherical Fibonacci lattice.](cobe-shader-4.png)
 
-![](cobe-shader-5.png)
+![The Fibonacci lattice masked by land: an even dotted world map.](cobe-shader-5.png)
 </div>
 
 We also got rid of the precision error by rounding before sin/cos as well as [@farteryhr](https://twitter.com/farteryhr)’s amazing mantissa trick, if you want to know more about that part:
@@ -86,7 +87,7 @@ We also got rid of the precision error by rounding before sin/cos as well as [@f
 
 Finally, we can add some phong lighting and glow effect to make it look good. And the last step is to use [@evanwallace](https://twitter.com/evanwallace)’s [glslx](https://evanw.github.io/glslx) to compress the shader for distribution.
 
-<div className="framed no-padding">![](cobe-shader-6.jpeg)</div>
+<div className="framed no-padding">![The finished globe: the dotted world map with soft lighting and a glow around the edge.](cobe-shader-6.jpeg)</div>
 
 This library now powers [vercel.com](https://vercel.com) and [vercel.com/edge](https://vercel.com/edge) :)
 

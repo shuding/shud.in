@@ -1,0 +1,106 @@
+export const metadata = {
+  title: 'The Making of COBE',
+  date: '2026.11.26',
+  description: 'How a 5kB WebGL globe is drawn, step by step, with a live globe that rebuilds itself as you read.',
+  demo: 'cobe',
+}
+
+import { Story, Step } from './cobe-story'
+
+# The Making of COBE
+
+[COBE](https://github.com/shuding/cobe) is a WebGL globe in 5kB. It draws thousands of dots on a sphere, and it doesn't load a 3D model, a texture atlas or a WebGL library to do it. This is how it’s made, one idea at a time.
+
+The globe here is live. It rebuilds itself as you scroll, and you can drag it to spin. (The [original version](/thoughts/cobe) of this post was a tweet thread.)
+
+<Story>
+
+<Step stage='map'>
+
+## A Sphere and a Map
+
+Most WebGL globes are a sphere mesh with a world map wrapped around it. That means a geometry library and an image that’s large enough to stay sharp, and ours was still blurry.
+
+COBE draws the sphere in a fragment shader instead. Every pixel works out where it lands on the globe, and asks a world map whether that spot is land:
+
+```glsl
+color = isOnLand(p) ? ink : paper
+```
+
+</Step>
+
+<Step stage='lattice'>
+
+## A Lattice of Dots
+
+[GitHub’s globe](https://github.blog/2020-12-21-how-we-built-the-github-globe) showed that thousands of dots look better than a sharp map. They placed the dots one by one in a loop, and had to cut ~12,000 dots down to ~8,000 to keep it fast.
+
+But a shader doesn’t need a loop. Each pixel can check on its own whether it’s close to a dot, all of them in parallel. Start with rows and columns of latitude and longitude:
+
+```glsl
+color = isOnDot(p) ? ink : paper
+```
+
+</Step>
+
+<Step stage='multiply'>
+
+## Land × Dots
+
+Multiply the two, and you get a dotted world map:
+
+```glsl
+color = isOnLand(p) && isOnDot(p) ? ink : paper
+```
+
+</Step>
+
+<Step stage='shrink'>
+
+## A Tiny Map
+
+Here’s the nice part. Each dot only asks the map about its own center, so the map doesn’t need to be sharp at all. A 4096×2048 map (80kB) and a 256×128 one (1kB) give almost the same dots, and 1kB is small enough to inline in the library as a base64 string.
+
+The globe here already uses the 256×128 map. Try shrinking it further, and see where it breaks.
+
+</Step>
+
+<Step stage='poles'>
+
+## Crowded Poles
+
+Look at the north pole. Rows of latitude get shorter towards the poles, but each still gets a full ring of dots, so they pile up. The samples are even by angle, not by area.
+
+</Step>
+
+<Step stage='fibonacci'>
+
+## Spherical Fibonacci
+
+A [Spherical Fibonacci lattice](https://observablehq.com/@mbostock/spherical-fibonacci-lattice) spreads points evenly by area, like seeds in a sunflower. The catch is finding the nearest point from a pixel: the usual way generates the points in order, which is a loop again.
+
+[Inigo Quilez’s shader](https://shadertoy.com/view/lllXz4), based on the paper [Spherical Fibonacci Mapping](https://dokumen.tips/documents/spherical-fibonacci-mapping-fibonacci-mapping-benjamin-keinert-1matthias-innmann.html), goes the other way: from a point on the sphere straight to its closest Fibonacci point. Every pixel does a little math, with no loop over the dots, so the number of dots is just a number. Switch between the two lattices, and change the count.
+
+Getting it exact took some care with floating point precision: rounding before `sin` and `cos`, and [@farteryhr](https://x.com/farteryhr)’s [mantissa trick](https://github.com/shuding/cobe/pull/9).
+
+</Step>
+
+<Step stage='light'>
+
+## Light and Glow
+
+Finally, some shading so the sphere has volume, and a soft glow around the edge. [glslx](https://evanw.github.io/glslx) compresses the shader, and the whole library comes out at 5kB.
+
+</Step>
+
+<Step stage='markers'>
+
+## Markers
+
+Four years later, [COBE v2](https://x.com/shuding/status/2034352633381847145) added markers and arcs, and a way to attach any HTML element to a point on the globe. That last one uses CSS Anchor Positioning, so labels follow the globe as it spins, and you style them with plain CSS.
+
+Try it at [cobe.vercel.app](https://cobe.vercel.app).
+
+</Step>
+
+</Story>

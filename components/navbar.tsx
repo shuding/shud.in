@@ -27,6 +27,7 @@ function Item(props: React.ComponentProps<typeof Link>) {
     >
       <Link
         {...props}
+        aria-current={isActive ? 'page' : undefined}
         className='inline-block w-full px-2 focus-visible:outline focus-visible:outline-rurikon-400
         focus-visible:rounded-xs 
         focus-visible:outline-dotted
