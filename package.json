@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node --env-file-if-exists=.env.local scripts/fetch-fonts.mjs && next dev",
+    "build": "node --env-file-if-exists=.env.local scripts/fetch-fonts.mjs && next build",
     "start": "next start",
     "lint": "next lint"
   },

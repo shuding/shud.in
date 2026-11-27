@@ -41,3 +41,8 @@ next-env.d.ts
 # v0
 .v0
 .env*
+
+# Licensed PP Kyoto subsets, downloaded at build time (scripts/fetch-fonts.mjs).
+# Never commit: the font is commercial and this repository is public.
+/public/fonts/kyoto/
+__pycache__/

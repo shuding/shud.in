@@ -102,7 +102,10 @@ nav,
 .sidenote {
   font-family: var(--serif), Baskerville, Georgia, Cambria, 'Times New Roman',
     Times, serif;
-  font-style: initial;
+  /* PP Kyoto has real upright and italic styles. The open-source fallback
+     only has an italic, declared as its normal style, so it looks the same
+     either way (see app/layout.tsx). */
+  font-style: italic;
   font-optical-sizing: auto;
   font-variation-settings: 'wght' 480, var(--sans-variation);
   font-weight: 400;
@@ -110,30 +113,64 @@ nav,
   letter-spacing: -0.006em;
 }
 
+/* Quotes use the upright serif; italics inside them, the sidebar and inline
+   <i>/<em> stay italic, and so do guestbook signatures. */
+blockquote {
+  font-style: normal;
+}
+.font-serif {
+  font-style: italic;
+}
+
 del {
   text-decoration-thickness: 1px;
 }
 
+/* Quotes hang an opening quotation mark in the gutter, so their text stays
+   aligned with the body. Consecutive quotes read as one: only the first gets
+   a mark. A blockquote that isn't a quotation opts out: see `.transcript`. */
 blockquote {
-  box-shadow: 1px 0 0 var(--color-rurikon-500) inset;
+  position: relative;
 }
-@media screen and (max-width: 420px) {
-  blockquote {
-    /* Make it wider on mobile with a lighter color */
-    box-shadow: 2px 0 0 var(--color-rurikon-300) inset;
-  }
+/* `:where` keeps the "first of a run" check from outweighing the opt-out. */
+.quote:where(:not(.quote + .quote)) > blockquote > :first-child::before {
+  content: '\201C';
+  position: absolute;
+  translate: calc(-100% - 0.08em) 0;
+  color: var(--color-rurikon-300);
+}
+.transcript .quote > blockquote > :first-child::before {
+  content: none;
 }
 
-/* Consecutive quotes share one continuous rule. */
+/* A chat transcript, written as a blockquote with one `**time** message` per
+   line inside `<div className='transcript'>`. Times are quiet, tabular and
+   right-aligned, so the colons and the messages line up. */
+.transcript strong {
+  display: inline-block;
+  width: 2.75em;
+  margin-right: 0.75em;
+  text-align: right;
+  font-family: var(--sans);
+  font-style: normal;
+  font-weight: inherit;
+  font-variation-settings: 'wght' 440, var(--sans-variation);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--color-rurikon-300);
+}
+
+/* Consecutive quotes join into one block. */
 .quote + .quote > blockquote {
   display: flow-root;
 }
 
-/* Trim quotes to cap height and baseline so the rule hugs the text, and give
+/* Trim quotes to cap height and baseline so they sit tightly, and give
    the trimmed space back as padding on the wrapper so the text stays on the
-   1.75rem grid. Lora Italic has ascent 1.006em, descent 0.274em and cap
-   height 0.7em (constants, since `cap` here would measure the wrapper's sans
-   font):
+   1.75rem grid. The serif's ascent and descent come from `--serif-ascent`
+   and `--serif-descent` (PP Kyoto's, set in app/layout.tsx), defaulting to
+   Lora Italic's 1.006em and 0.274em. Both have a cap height of 0.7em
+   (constants, since `cap` here would measure the wrapper's sans font):
      top:    top half-leading + ascent - cap height
      bottom: 1lh - cap height - top
    The total is exact, so content after a quote stays on the grid. The split
@@ -145,8 +182,8 @@ blockquote {
    posts stay untrimmed. */
 @supports (text-box: trim-both cap alphabetic) {
   .quote:not(:lang(zh)) {
-    --ascent: round(1.006em, 0.5px);
-    --descent: round(0.274em, 0.5px);
+    --ascent: round(var(--serif-ascent, 1.006em), 0.5px);
+    --descent: round(var(--serif-descent, 0.274em), 0.5px);
     --trim-top: calc(
       round(down, (1lh - var(--ascent) - var(--descent)) / 2, 0.5px) +
         var(--ascent) - 0.7em
