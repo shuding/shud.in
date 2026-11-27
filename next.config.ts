@@ -6,6 +6,19 @@ export default withMDX()({
   // Don't generate AGENTS.md / CLAUDE.md when an agent runs `next dev`.
   agentRules: false,
   turbopack: {},
+  headers: async () => [
+    {
+      // Licensed serif subsets (see scripts/fetch-fonts.mjs). Their names
+      // don't change when they're rebuilt, so cache for a day, not forever.
+      source: '/fonts/kyoto/:file*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=86400, stale-while-revalidate=604800',
+        },
+      ],
+    },
+  ],
   redirects: async () => [
     {
       source: '/images',
@@ -48,6 +61,10 @@ export default withMDX()({
   },
   transpilePackages: ['shiki'],
   serverExternalPackages: ['@shikijs/twoslash'],
+  // The layout checks for the licensed serif's manifest (see app/layout.tsx).
+  outputFileTracingIncludes: {
+    '/*': ['./public/fonts/kyoto/manifest.json'],
+  },
   // Code blocks are highlighted at build time (every page with MDX is
   // prerendered), so keep the highlighter out of server functions: the
   // TypeScript compiler that Twoslash uses, and Shiki's grammars, themes and

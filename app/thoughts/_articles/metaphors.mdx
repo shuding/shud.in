@@ -37,12 +37,16 @@ Robin Milner said “well-typed programs cannot go wrong.” The universe seems 
 
 Here’s a client-side rendered conversation:
 
+<div className='no-quote-mark'>
+
 > **9:02** hey  
 > **11:47** hi!  
 > **11:48** do you have a minute?  
 > **14:15** sure, what’s up  
 > **14:16** so about the migration...  
 > **17:30** which one?
+
+</div>
 
 Every message is a round trip, and each one waits on the other person’s latency. Across time zones, five round trips take two days. It’s a [waterfall](/thoughts/performance-is-not-a-technical-problem): each request starts only after the previous one resolves, because the client didn’t have enough context to ask for everything at once.
 

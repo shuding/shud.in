@@ -5,7 +5,9 @@ import { Analytics } from '@vercel/analytics/next'
 import { ViewTransition } from 'react'
 
 import cn from 'clsx'
+import { existsSync, readFileSync } from 'fs'
 import localFont from 'next/font/local'
+import path from 'path'
 import 'katex/dist/katex.min.css'
 
 import Navbar from '@/components/navbar'
@@ -48,9 +50,11 @@ const sansExt = localFont({
   ],
 })
 
+// The open-source serif. It's the fallback for PP Kyoto (below), so it isn't
+// preloaded: with Kyoto, most pages never need it.
 const serifCore = localFont({
   src: './_fonts/subset/lora-italic-core.woff2',
-  preload: true,
+  preload: false,
   display: 'block',
   adjustFontFallback: false,
   declarations: [
@@ -99,6 +103,42 @@ const monoExt = localFont({
   ],
 })
 
+// PP Kyoto, the licensed serif. It isn't in this public repository: builds
+// that have `KYOTO_FONTS_URL` download it into public/fonts/kyoto/ (see
+// scripts/fetch-fonts.mjs). Without it, as in forks, the site keeps the
+// open-source serif above.
+type KyotoFace = {
+  file: string
+  weight: number
+  style: 'normal' | 'italic'
+  layer: 'core' | 'ext'
+  unicodeRange: string
+}
+
+// The fetch script writes the manifest last, only after every file arrived.
+// It's also traced into server functions (next.config.ts), so dynamically
+// rendered pages see it too.
+function loadKyoto(): KyotoFace[] | null {
+  const manifest = path.join(process.cwd(), 'public/fonts/kyoto/manifest.json')
+  if (!existsSync(manifest)) return null
+  return JSON.parse(readFileSync(manifest, 'utf8'))
+}
+
+const kyoto = loadKyoto()
+
+const kyotoFontFaces = kyoto
+  ?.map(
+    (face) => `@font-face {
+  font-family: Kyoto;
+  src: url(/fonts/kyoto/${face.file}) format('woff2');
+  font-weight: ${face.weight};
+  font-style: ${face.style};
+  font-display: block;
+  unicode-range: ${face.unicodeRange};
+}`,
+  )
+  .join('\n')
+
 export const metadata: Metadata = {
   title: {
     template: '%s - Shu Ding',
@@ -122,10 +162,26 @@ export default function RootLayout({
   return (
     <html lang='en' className='overflow-x-hidden touch-manipulation'>
       <head>
+        {kyoto ? (
+          <>
+            {/* The nav is in Kyoto Italic on every page. */}
+            <link
+              rel='preload'
+              href='/fonts/kyoto/kyoto-italic-core.woff2'
+              as='font'
+              type='font/woff2'
+              crossOrigin='anonymous'
+            />
+            <style>{kyotoFontFaces}</style>
+          </>
+        ) : null}
         <style>{`:root {
   --sans: ${sansCore.style.fontFamily}, ${sansExt.style.fontFamily};
-  --serif: ${serifCore.style.fontFamily}, ${serifExt.style.fontFamily};
-  --mono: ${monoCore.style.fontFamily}, ${monoExt.style.fontFamily};
+  --serif: ${kyoto ? 'Kyoto, ' : ''}${serifCore.style.fontFamily}, ${serifExt.style.fontFamily};
+  --mono: ${monoCore.style.fontFamily}, ${monoExt.style.fontFamily};${
+    // Metrics for the quote trim in globals.css (Kyoto's, else Lora's).
+    kyoto ? '\n  --serif-ascent: 1.16em;\n  --serif-descent: 0.44em;' : ''
+  }
 }`}</style>
       </head>
       <body
