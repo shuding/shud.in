@@ -25,7 +25,12 @@ export function Guestbook({ entries }: { entries: GuestbookEntry[] }) {
               </p>
               <p className='text-rurikon-300 font-serif'>
                 {entry.name ? <span>{entry.name}, </span> : null}
-                <time dateTime={entry.createdAt} className=''>
+                {/* Dates use the sans, like the thoughts list: Kyoto's
+                    italic 1 reads too much like an l. */}
+                <time
+                  dateTime={entry.createdAt}
+                  className='font-sans not-italic tabular-nums tracking-tight'
+                >
                   {formatDate(entry.createdAt)}
                 </time>
               </p>

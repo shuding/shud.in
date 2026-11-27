@@ -22,7 +22,13 @@ export default async function OpenGraphImage(props: {
   const { metadata } = await import(`../_articles/${params.slug}.mdx`)
 
   return new ImageResponse(
-    <OgCard title={metadata.title + ' →'} description={metadata.description} />,
+    <OgCard
+      title={metadata.title}
+      description={metadata.description}
+      author='Shu Ding'
+      collection='Thoughts'
+      arrow
+    />,
     {
       ...ogSize,
       fonts: ogFonts,
