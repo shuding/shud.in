@@ -128,8 +128,7 @@ del {
 
 /* Quotes hang an opening quotation mark in the gutter, so their text stays
    aligned with the body. Consecutive quotes read as one: only the first gets
-   a mark. A blockquote that isn't a quotation (like a transcript) opts out
-   with a `<div className='no-quote-mark'>` around it. */
+   a mark. A blockquote that isn't a quotation opts out: see `.transcript`. */
 blockquote {
   position: relative;
 }
@@ -140,8 +139,25 @@ blockquote {
   translate: calc(-100% - 0.08em) 0;
   color: var(--color-rurikon-300);
 }
-.no-quote-mark .quote > blockquote > :first-child::before {
+.transcript .quote > blockquote > :first-child::before {
   content: none;
+}
+
+/* A chat transcript, written as a blockquote with one `**time** message` per
+   line inside `<div className='transcript'>`. Times are quiet, tabular and
+   right-aligned, so the colons and the messages line up. */
+.transcript strong {
+  display: inline-block;
+  width: 2.75em;
+  margin-right: 0.75em;
+  text-align: right;
+  font-family: var(--sans);
+  font-style: normal;
+  font-weight: inherit;
+  font-variation-settings: 'wght' 440, var(--sans-variation);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--color-rurikon-300);
 }
 
 /* Consecutive quotes join into one block. */
