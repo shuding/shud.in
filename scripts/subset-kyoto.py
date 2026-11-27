@@ -28,6 +28,14 @@ spec = importlib.util.spec_from_file_location(
 base = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(base)
 
+# Static OTFs for Open Graph images: `next/og` (Satori) can't read WOFF2.
+# (output name, source file, weight, style)
+OG_FACES = [
+    ('kyoto-og-regular', 'PPKyoto-Regular.otf', 400, 'normal'),
+    ('kyoto-og-italic', 'PPKyoto-RegularItalic.otf', 400, 'italic'),
+    ('kyoto-og-bold', 'PPKyoto-Bold.otf', 700, 'normal'),
+]
+
 # (output name, source file, CSS font-weight, CSS font-style)
 FACES = [
     ('kyoto-regular', 'PPKyoto-Regular.otf', 400, 'normal'),
@@ -88,6 +96,21 @@ def main():
                 'unicodeRange': base.to_unicode_range(covered),
             })
             print(f'{file}: {len(data) / 1024:.1f} KB, {len(covered)} chars')
+
+    # `layer: 'og'` entries aren't web fonts; the layout skips them.
+    for name, source, weight, style in OG_FACES:
+        data, covered = base.build(source, wanted, None, None, flavor=None)
+        file = f'{name}.otf'
+        with open(os.path.join(out_dir, file), 'wb') as f:
+            f.write(data)
+        manifest.append({
+            'file': file,
+            'weight': weight,
+            'style': style,
+            'layer': 'og',
+            'unicodeRange': base.to_unicode_range(covered & wanted),
+        })
+        print(f'{file}: {len(data) / 1024:.1f} KB')
 
     with open(os.path.join(out_dir, 'manifest.json'), 'w') as f:
         json.dump(manifest, f, indent=2)

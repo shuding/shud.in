@@ -128,15 +128,24 @@ del {
 
 /* Quotes hang an opening quotation mark in the gutter, so their text stays
    aligned with the body. Consecutive quotes read as one: only the first gets
-   a mark. A blockquote that isn't a quotation opts out: see `.transcript`. */
+   a mark. A blockquote that isn't a quotation opts out: see `.transcript`.
+   The mark is inline text in a fixed-width box pulled into the gutter, so it
+   sits on the first line's baseline in every engine. (Absolute positioning
+   relies on the static position of generated content, which WebKit places
+   lower.) Safari's `hanging-punctuation` (set on `main`) would hang the mark
+   a second time, so it's off inside quotes. */
 blockquote {
-  position: relative;
+  hanging-punctuation: none;
 }
 /* `:where` keeps the "first of a run" check from outweighing the opt-out. */
 .quote:where(:not(.quote + .quote)) > blockquote > :first-child::before {
   content: '\201C';
-  position: absolute;
-  translate: calc(-100% - 0.08em) 0;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+  padding-right: 0.08em;
+  box-sizing: border-box;
+  text-align: right;
   color: var(--color-rurikon-300);
 }
 .transcript .quote > blockquote > :first-child::before {

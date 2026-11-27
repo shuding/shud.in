@@ -111,7 +111,8 @@ type KyotoFace = {
   file: string
   weight: number
   style: 'normal' | 'italic'
-  layer: 'core' | 'ext'
+  // `og` files are for Open Graph images (app/_og.tsx), not the page.
+  layer: 'core' | 'ext' | 'og'
   unicodeRange: string
 }
 
@@ -127,7 +128,8 @@ function loadKyoto(): KyotoFace[] | null {
 const kyoto = loadKyoto()
 
 const kyotoFontFaces = kyoto
-  ?.map(
+  ?.filter((face) => face.layer !== 'og')
+  .map(
     (face) => `@font-face {
   font-family: Kyoto;
   src: url(/fonts/kyoto/${face.file}) format('woff2');

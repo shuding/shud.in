@@ -18,6 +18,7 @@ export default function OpenGraphImage() {
     <OgCard
       title={metadata.title}
       description={'Whispers in the sounds of silence.'}
+      collection='shud.in'
     />,
     {
       ...ogSize,
