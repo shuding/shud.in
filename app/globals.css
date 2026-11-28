@@ -269,31 +269,35 @@ code {
   /* -webkit-box-decoration-break: clone;
   box-decoration-break: clone; */
 
-  /* color: hsl(215deg 32% 37%); */
-  --shiki-token-comment: hsl(215deg 32% 37% / 45%);
-  --shiki-token-punctuation: hsl(215deg 32% 37% / 65%);
-  --shiki-token-keyword: oklch(0.25 0.09 256.57 / 0.65);
-  --shiki-token-function: oklch(0.46 0.22 259.43);
-  --shiki-token-string: oklch(0.46 0.19 147.42);
-  --shiki-token-string-expression: oklch(0.46 0.19 147.42);
-  --shiki-token-constant: hsl(215deg 32% 26%);
-  --shiki-token-link: oklch(0.46 0.19 147.42);
-  --shiki-token-parameter: #ff9800;
-  --shiki-foreground: lab(21 17.74 -56.63);
+  /* Names stay ink and punctuation stays light; color marks the parts of
+     speech: coral keywords, blue calls, green strings, violet parameters.
+     Each meets 4.5:1 on the code background. */
+  --shiki-token-comment: var(--color-rurikon-400);
+  --shiki-token-punctuation: var(--color-rurikon-300);
+  --shiki-token-keyword: oklch(0.575 0.2 28);
+  --shiki-token-function: oklch(0.5 0.22 262);
+  --shiki-token-string: oklch(0.525 0.15 160);
+  --shiki-token-string-expression: oklch(0.525 0.15 160);
+  /* Also covers variable and tag names, so it stays ink. */
+  --shiki-token-constant: var(--color-rurikon-700);
+  --shiki-token-link: oklch(0.525 0.15 160);
+  --shiki-token-parameter: oklch(0.55 0.19 305);
+  --shiki-foreground: var(--color-rurikon-700);
 }
 
 pre {
-  --shiki-foreground: #414141;
+  --shiki-foreground: var(--color-rurikon-600);
   --shiki-background: transparent;
 }
 pre code {
-  --shiki-foreground: #414141;
+  --shiki-foreground: var(--color-rurikon-600);
 }
 
 code {
   /* Shiki transformers */
+  /* A neutral wash, so colored tokens read cleanly on highlighted lines. */
   .line.highlighted {
-    background-color: oklch(0.69 0.17 251.54 / 0.09);
+    background-color: oklch(0.55 0.01 260 / 0.06);
     margin: 0 -1.25rem;
     padding: 0 1.25rem;
     width: calc(100% + 2.5rem);
