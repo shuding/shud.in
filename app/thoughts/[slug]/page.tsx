@@ -1,5 +1,7 @@
 import cn from 'clsx'
 
+import { ReadingProgress } from '@/components/reading-progress'
+
 import { getArticleParams } from './params'
 
 // Every article is prerendered; anything else is a 404, so posts never render
@@ -17,12 +19,16 @@ export default async function Page(props: {
   )
 
   return (
-    <div
-      className={cn(metadata.chinese && 'text-justify font-zh')}
-      lang={metadata.chinese ? 'zh-Hans' : 'en'}
-    >
-      <MDXContent />
-    </div>
+    <>
+      <div
+        id='article-content'
+        className={cn(metadata.chinese && 'text-justify font-zh')}
+        lang={metadata.chinese ? 'zh-Hans' : 'en'}
+      >
+        <MDXContent />
+      </div>
+      <ReadingProgress targetId='article-content' />
+    </>
   )
 }
 
