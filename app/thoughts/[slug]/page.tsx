@@ -1,6 +1,9 @@
 import cn from 'clsx'
 
+import { ReadingProgress } from '@/components/reading-progress'
+
 import { getArticleParams } from './params'
+import { getReadingMinutes } from './reading-time'
 
 // Every article is prerendered; anything else is a 404, so posts never render
 // at request time.
@@ -12,17 +15,20 @@ export default async function Page(props: {
   }>
 }) {
   const params = await props.params
-  const { default: MDXContent, metadata } = await import(
-    '../_articles/' + `${params.slug}.mdx`
-  )
+  const [{ default: MDXContent, metadata }, minutes] = await Promise.all([
+    import('../_articles/' + `${params.slug}.mdx`),
+    // Read at build time with the rest of the prerendered post.
+    getReadingMinutes(params.slug),
+  ])
 
   return (
-    <div
+    <ReadingProgress
+      minutes={minutes}
       className={cn(metadata.chinese && 'text-justify font-zh')}
       lang={metadata.chinese ? 'zh-Hans' : 'en'}
     >
       <MDXContent />
-    </div>
+    </ReadingProgress>
   )
 }
 
